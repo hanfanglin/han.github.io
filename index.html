@@ -338,11 +338,120 @@ const DB = {
   setUsers:v=>lsSet('pf_users',JSON.stringify(v)),
   setSales:v=>lsSet('pf_sales',JSON.stringify(v)),
   setArchives:v=>lsSet('pf_archives',JSON.stringify(v)),
-  setting(k,d){const s=JSON.parse(lsGet('pf_set')||'{}');return d!==undefined?(s[k]=d,lsSet('pf_set',JSON.stringify(s)),d):(s[k]??d);},
+  setting(k,d){const s=JSON.parse(lsGet('pf_set')||'{}');
+    if(d===undefined) return s[k]??null;            // 读：不传第二参数
+    s[k]=d;lsSet('pf_set',JSON.stringify(s));return d;},  // 写：传了就写入
 };
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+/* ====== 云同步：跨设备自动同步（自建服务端） ======
+ * 原理：所有增删改都经过 DB.setUsers/setSales/setArchives，
+ * 在这里统一做三件事：
+ *   1. 自动盖章：内容有变化的记录打上 updatedAt 时间戳（编辑冲突时新者胜）
+ *   2. 删除墓碑：本地消失的记录 id 记入 pf_tombs（让删除也能同步到其它设备）
+ *   3. 预约推送：变动后 3 秒自动同步到服务端
+ * 拉取合并：按 id 对账，updatedAt 新者胜；墓碑时间晚于记录时间的记录被移除。 */
+let _syncing=false, _pushTimer=null;
+(function(){
+  const FNS={setUsers:'pf_users',setSales:'pf_sales',setArchives:'pf_archives'};
+  Object.keys(FNS).forEach(fn=>{
+    const orig=DB[fn].bind(DB), key=FNS[fn];
+    DB[fn]=v=>{
+      v=Array.isArray(v)?v:[];
+      if(!_syncing){
+        const old=JSON.parse(lsGet(key)||'[]');
+        const bare=x=>{const b={...(x||{})}; delete b.updatedAt; return JSON.stringify(b);};
+        const oldMap={}; old.forEach(o=>{ if(o&&o.id) oldMap[o.id]=bare(o); });
+        const tombs=JSON.parse(lsGet('pf_tombs')||'{}');
+        let tChanged=false, stampNow=Date.now();
+        const nowIds=new Set();
+        v.forEach(o=>{
+          if(!o||!o.id) return;
+          nowIds.add(o.id);
+          if(oldMap[o.id]!==bare(o)) o.updatedAt=stampNow;   // 新增或内容有修改 → 盖章
+        });
+        old.forEach(o=>{
+          if(o&&o.id&&!nowIds.has(o.id)&&!tombs[o.id]){ tombs[o.id]=stampNow; tChanged=true; } // 被删除 → 墓碑
+        });
+        if(tChanged) lsSet('pf_tombs',JSON.stringify(tombs));
+      }
+      orig(v);
+      if(!_syncing) schedulePush();
+    };
+  });
+})();
+// 合并一条记录数组：本地 + 远端 → 按 id 对账、时间戳新者胜、墓碑生效
+function mergeArr(local,remote,tombs){
+  const by={};
+  local.forEach(x=>{ if(x&&x.id) by[x.id]=x; });
+  (remote||[]).forEach(x=>{
+    if(!x||!x.id) return;
+    const l=by[x.id];
+    if(!l){ by[x.id]=x; return; }
+    const lt=l.updatedAt||l.createdAt||0, rt=x.updatedAt||x.createdAt||0;
+    if(rt>lt) by[x.id]=x;
+  });
+  const TOMB_KEEP=90*24*3600*1000; // 墓碑保留 90 天，过期清理
+  const now=Date.now(); let tDirty=false;
+  Object.keys(tombs).forEach(k=>{ if(now-tombs[k]>TOMB_KEEP){ delete tombs[k]; tDirty=true; } });
+  const out=Object.values(by).filter(x=>{
+    const t=tombs[x.id]; if(!t) return true;
+    return (x.updatedAt||x.createdAt||0)>t;  // 记录比墓碑新 → 复活（删除后重新导入）
+  });
+  return {list:out,tombs,tDirty};
+}
+function syncEndpoint(){
+  const base=(DB.setting('syncUrl')||'').trim().replace(/\/+$/,'');
+  const token=(DB.setting('syncToken')||'').trim();
+  if(!base||!token) return null;
+  if(!/^https?:\/\//i.test(base)) return null;
+  return base+'/sync?token='+encodeURIComponent(token);
+}
+async function syncNow(manual){
+  const ep=syncEndpoint();
+  if(!ep){ if(manual) toast('请先配置同步服务器和密钥'); return false; }
+  if(_syncing) return false;
+  _syncing=true;
+  try{
+    // 1) 拉取远端
+    const r=await fetch(ep,{cache:'no-store'});
+    if(!r.ok) throw new Error('拉取失败('+r.status+')');
+    const remote=await r.json();
+    if(!remote||!remote.ok) throw new Error((remote&&remote.error)||'服务端返回异常');
+    // 2) 合并墓碑（本地 ∪ 远端，时间取较大者），再按墓碑过滤三类数据
+    const tombs=JSON.parse(lsGet('pf_tombs')||'{}');
+    Object.keys(remote.tombs||{}).forEach(k=>{ tombs[k]=Math.max(tombs[k]||0, remote.tombs[k]); });
+    const mU=mergeArr(DB.users(),remote.users,tombs);
+    const mS=mergeArr(DB.sales(),remote.sales,mU.tombs);
+    const mA=mergeArr(DB.archives(),remote.archives,mS.tombs);
+    // 3) 写回本地（_syncing 保护，避免盖章/墓碑/预约推送误触发）
+    const before=DB.users().length+'/'+DB.sales().length;
+    _syncWrite(()=>{ DB.setUsers(mU.list); DB.setSales(mS.list); DB.setArchives(mA.list);
+      lsSet('pf_tombs',JSON.stringify(mA.tombs)); });
+    // 4) 推送合并结果
+    const pr=await fetch(ep,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({users:mU.list,sales:mS.list,archives:mA.list,tombs:mA.tombs})});
+    if(!pr.ok) throw new Error('推送失败('+pr.status+')');
+    DB.setting('lastSync',Date.now());
+    const after=DB.users().length+'/'+DB.sales().length;
+    render();
+    if(manual) toast('同步成功 · 用户/记录 '+after);
+    else if(before!==after) toast('已从同步服务器更新数据');
+    return true;
+  }catch(e){
+    if(manual) toast('同步失败：'+(e.message||'网络错误'));
+    console.warn('[sync]',e);
+    return false;
+  }finally{ _syncing=false; }
+}
+function _syncWrite(fn){ _syncing=true; try{ fn(); } finally{ _syncing=false; } }
+function schedulePush(){
+  const ep=syncEndpoint(); if(!ep) return;
+  if(_pushTimer) clearTimeout(_pushTimer);
+  _pushTimer=setTimeout(()=>{ _pushTimer=null; syncNow(false); },3000);
+}
 const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
-const cur=()=>DB.setting('cur','¥');
+const cur=()=>DB.setting('cur')||'¥';
 const money=n=>{const v=(+n||0);const neg=v<0;const a=Math.abs(Math.round(v*100)/100).toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:2});return (neg?'-':'')+cur()+a;};
 const esc=s=>(s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const initials=n=>(n||'?').trim().slice(0,1).toUpperCase();
@@ -387,7 +496,7 @@ function goTab(t){ state.tab=t; state.editingSale=null; state.saleUser=null; ren
 
 function render(){
   // theme
-  const th=DB.setting('theme','auto');
+  const th=DB.setting('theme')||'auto';
   $('#app').className='app'+(th==='light'?' light':th==='dark'?' dark':'');
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));
   $('#fab').style.display = (state.tab==='today'||state.tab==='users'||state.tab==='settle')?'flex':'none';
@@ -970,14 +1079,25 @@ function syncArchive(archId){
 }
 
 /* ---- 设置 ---- */
+function lastSyncTxt(){
+  const t=+DB.setting('lastSync')||0;
+  if(!t) return '从未同步';
+  const d=new Date(+t);
+  return '上次同步 '+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+}
 function viewSettings(){
-  const cur=DB.setting('cur','¥'); const th=DB.setting('theme','auto');
+  const cur=DB.setting('cur')||'¥'; const th=DB.setting('theme')||'auto';
   const users=DB.users(), sales=DB.sales();
   return `
   <div class="section-title">偏好</div>
   <div class="list">
     <div class="row" id="setCur"><div class="main"><div class="name">货币符号</div><div class="sub">当前：${esc(cur)}</div></div><div class="amt chev">›</div></div>
     <div class="row" id="setTheme"><div class="main"><div class="name">外观</div><div class="sub">${th==='light'?'浅色':th==='dark'?'深色':'跟随系统'}</div></div><div class="amt chev">›</div></div>
+  </div>
+  <div class="section-title">云同步</div>
+  <div class="list">
+    <div class="row" id="syncCfg"><div class="main"><div class="name">同步服务器</div><div class="sub">${(DB.setting('syncUrl')&&DB.setting('syncToken'))?('已配置 · '+esc((DB.setting('syncUrl')||'').replace(/^https?:\/\//,'').split('/')[0])):'未配置（多设备同步用）'}</div></div><div class="amt chev">›</div></div>
+    <div class="row" id="syncGo"><div class="main"><div class="name">立即同步</div><div class="sub">${lastSyncTxt()}</div></div><div class="amt">⇅</div></div>
   </div>
   <div class="section-title">数据</div>
   <div class="list">
@@ -990,7 +1110,7 @@ function viewSettings(){
     <div class="row" id="offRow"><div class="main"><div class="name">离线可用</div><div class="sub">检查中…</div></div><div class="amt">…</div></div>
   </div>
   <div class="section-title">关于</div>
-  <div class="list"><div class="row"><div class="main"><div class="name">利润记账</div><div class="sub">本地存储 · 不上传任何数据</div></div></div></div>
+  <div class="list"><div class="row"><div class="main"><div class="name">利润记账</div><div class="sub">本地存储 · 可选云同步（数据只发往你自己的服务器）</div></div></div></div>
   <div style="text-align:center;color:var(--txt2);font-size:12px;margin-top:18px">在 iPhone Safari 中「添加到主屏幕」即可像 App 一样使用</div>
   `;
 }
@@ -1011,14 +1131,29 @@ function bindContent(){
   document.querySelectorAll('[data-lg]').forEach(el=>el.onclick=()=>selectPie(+el.dataset.lg));
   // 设置
   const setCur=$('#setCur'), setTheme=$('#setTheme'), exp=$('#exp'), imp=$('#imp'), clear=$('#clear');
-  if(setCur) setCur.onclick=()=>{const v=prompt('货币符号',DB.setting('cur','¥'));if(v!==null){DB.setting('cur',v.trim()||'¥');render();}};
+  if(setCur) setCur.onclick=()=>{const v=prompt('货币符号',DB.setting('cur')||'¥');if(v!==null){DB.setting('cur',v.trim()||'¥');render();}};
   if(setTheme) setTheme.onclick=()=>{
-    const cur=DB.setting('theme','auto');
+    const cur=DB.setting('theme')||'auto';
     const next=cur==='auto'?'light':cur==='light'?'dark':'auto';
     DB.setting('theme',next); render(); toast('外观：'+(next==='light'?'浅色':next==='dark'?'深色':'跟随系统'));
   };
   if(exp) exp.onclick=exportCSV;
   if(imp) imp.onclick=importCSV;
+  // 云同步
+  const syncCfg=$('#syncCfg'), syncGo=$('#syncGo');
+  if(syncCfg) syncCfg.onclick=()=>{
+    const u=prompt('同步服务器地址\n（你部署的 server.js 地址，如 https://xxx.onrender.com）',DB.setting('syncUrl')||'');
+    if(u===null) return;
+    const u2=u.trim().replace(/\/+$/,'');
+    if(!u2){ DB.setting('syncUrl',''); DB.setting('syncToken',''); render(); toast('已关闭云同步'); return; }
+    if(!/^https?:\/\//i.test(u2)){ toast('地址需以 http:// 或 https:// 开头'); return; }
+    const t=prompt('同步密钥（服务端环境变量 TOKEN 的值）',DB.setting('syncToken')||'');
+    if(t===null) return;
+    DB.setting('syncUrl',u2); DB.setting('syncToken',t.trim());
+    render(); toast('已保存，正在同步…');
+    syncNow(true);
+  };
+  if(syncGo) syncGo.onclick=()=>{ syncGo.querySelector('.sub').textContent='同步中…'; syncNow(true); };
   if(clear) clear.onclick=()=>{
     if(confirm('确定清空所有用户和记录？此操作不可恢复。')){
       if(confirm('再次确认：真的要删除全部数据吗？')){DB.setUsers([]);DB.setSales([]);DB.setArchives([]);render();toast('已清空');}
@@ -1310,8 +1445,18 @@ $('#fab').onclick=()=>{ if(state.tab==='users') openUserModal(); else if(state.t
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
 render();
 
+/* 云同步自动触发：启动后 1.5s 拉一次；从后台切回前台超过 60s 也拉一次 */
+if(syncEndpoint()){
+  setTimeout(()=>syncNow(false),1500);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState!=='visible') return;
+    const last=+DB.setting('lastSync')||0;
+    if(Date.now()-last>60000) syncNow(false);
+  });
+}
+
 /* Service Worker + 离线自检 */
-const SW_CACHE='profit-v9';
+const SW_CACHE='profit-v10';
 let offlineOK=false;
 async function checkOffline(){
   try{

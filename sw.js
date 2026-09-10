@@ -1,5 +1,5 @@
 // 离线缓存：让 App 在 iPhone 主屏打开时无需联网也可使用
-const CACHE='profit-v9';
+const CACHE='profit-v10';
 // index.html 排第一：就算后面的文件缓存失败，也要保证离线能打开主程序
 const FILES=['index.html','manifest.webmanifest','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{
@@ -16,6 +16,8 @@ self.addEventListener('activate',e=>{
 self.addEventListener('fetch',e=>{
   if(e.request.method!=='GET') return;
   const url=new URL(e.request.url);
+  // 跨域请求（云同步等）不经过 SW，避免被缓存干扰
+  if(url.origin!==self.location.origin) return;
   const isNav = e.request.mode==='navigate' || url.pathname.endsWith('.html');
   if(isNav){
     // 导航/HTML 请求：网络优先，成功则更新缓存；离线时回退缓存
