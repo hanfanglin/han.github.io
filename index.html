@@ -239,6 +239,15 @@ const cur=()=>DB.setting('cur','¥');
 const money=n=>{const v=(+n||0);const neg=v<0;const a=Math.abs(Math.round(v*100)/100).toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:2});return (neg?'-':'')+cur()+a;};
 const esc=s=>(s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const initials=n=>(n||'?').trim().slice(0,1).toUpperCase();
+// 时间展示：精确到分钟（旧记录由 createdAt 推算，导入记录若无法推断则只显示日期）
+function fmtTime(s){
+  if(!s) return '';
+  if(s.time) return s.time;
+  if(s.createdAt){const d=new Date(s.createdAt);
+    return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+  return '';
+}
+function fmtDateTime(s){const t=fmtTime(s);return (s.date||'')+(t?' '+t:'');}
 
 let state={tab:'today', date:todayStr(), editingSale:null, saleUser:null, saleMode:'qty'};
 
@@ -280,6 +289,11 @@ function render(){
   else if(state.tab==='settings') c.innerHTML=viewSettings();
 
   bindContent();
+  // 每次渲染后同步「离线可用」状态（切换页面会重建 DOM，否则会退回「检查中…」）
+  if(typeof refreshOfflineRow==='function' && !render._pending){
+    render._pending=true;
+    setTimeout(()=>{render._pending=false; refreshOfflineRow(false);},60);
+  }
 }
 
 /* ---- 今日 ---- */
@@ -409,6 +423,10 @@ function viewSettings(){
     <div class="row" id="imp"><div class="main"><div class="name">导入 CSV 备份</div></div><div class="amt">›</div></div>
     <div class="row" id="clear"><div class="main"><div class="name" style="color:var(--red)">清空全部数据</div><div class="sub">${users.length} 用户 · ${sales.length} 记录</div></div><div class="amt">›</div></div>
   </div>
+  <div class="section-title">离线</div>
+  <div class="list">
+    <div class="row" id="offRow"><div class="main"><div class="name">离线可用</div><div class="sub">检查中…</div></div><div class="amt">…</div></div>
+  </div>
   <div class="section-title">关于</div>
   <div class="list"><div class="row"><div class="main"><div class="name">利润记账</div><div class="sub">本地存储 · 不上传任何数据</div></div></div></div>
   <div style="text-align:center;color:var(--txt2);font-size:12px;margin-top:18px">在 iPhone Safari 中「添加到主屏幕」即可像 App 一样使用</div>
@@ -422,9 +440,9 @@ function bindContent(){
     const id=b.dataset.del; const s=DB.sales(); const i=s.findIndex(x=>x.id===id);
     if(i>=0){ if(confirm('删除这笔记录？')){ s.splice(i,1); DB.setSales(s); render(); } }
   });
-  // 用户点击 -> 编辑
+  // 用户点击 -> 查看充值明细（编辑在明细页内的「编辑资料」）
   document.querySelectorAll('[data-user]').forEach(b=>b.onclick=()=>{
-    const u=DB.users().find(x=>x.id===b.dataset.user); if(u) openUserModal(u);
+    const u=DB.users().find(x=>x.id===b.dataset.user); if(u) openUserHistory(u);
   });
   // 设置
   const setCur=$('#setCur'), setTheme=$('#setTheme'), exp=$('#exp'), imp=$('#imp'), clear=$('#clear');
@@ -489,9 +507,10 @@ function showSaleSheet(){
     if(!u||!(a>0)){toast('请输入有效销售额');return;}
     const {profit,margin}=saleCalc(u,a);
     const q=(+u.price>0)? a/(+u.price) : 0;  // 派生数量，仅用于展示
+    const timeStr=fmtTime({date:state.date, createdAt:Date.now()});
     const sales=DB.sales();
     sales.push({id:uid(),userId:u.id,userName:u.name,cost:+u.cost||0,price:+u.price||0,
-      qty:q,amount:a,profit,margin,date:state.date,createdAt:Date.now()});
+      qty:q,amount:a,profit,margin,date:state.date,time:timeStr,createdAt:Date.now()});
     DB.setSales(sales); state._amt=''; closeSheet(); render(); toast('已保存 · 利润 '+money(profit));
   };
 }
@@ -561,8 +580,8 @@ function exportCSV(){
   csv+='用户名,单位成本,单位售价,备注\n';
   users.forEach(u=>{csv+=[u.name,u.cost,u.price,u.note||''].map(csvCell).join(',')+'\n';});
   csv+='\n[销售]\n';
-  csv+='日期,用户名,数量,单位成本,单位售价,销售额,利润\n';
-  sales.forEach(s=>{csv+=[s.date,csvCell(s.userName),s.qty,s.cost,s.price,s.amount,s.profit].map(csvCell).join(',')+'\n';});
+  csv+='日期,用户名,数量,单位成本,单位售价,销售额,利润,时间\n';
+  sales.forEach(s=>{csv+=[s.date,csvCell(s.userName),s.qty,s.cost,s.price,s.amount,s.profit,csvCell(fmtTime(s))].map(csvCell).join(',')+'\n';});
   const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
   a.download='利润记账_'+todayStr()+'.csv';a.click();toast('已导出 '+users.length+' 用户 / '+sales.length+' 条记录');
@@ -596,7 +615,7 @@ function importCSV(){
       saleRows.forEach(p=>{ if(p.length<7)return;
         const name=p[1];
         let u=users.find(x=>x.name===name); if(!u){u={id:uid(),name,cost:+p[3]||0,price:+p[4]||0,note:''};users.push(u);}
-        const rec={id:uid(),userId:u.id,userName:name,cost:+p[3]||0,price:+p[4]||0,qty:+p[2]||0,amount:+p[5]||0,profit:+p[6]||0,date:p[0],createdAt:Date.now()};
+        const rec={id:uid(),userId:u.id,userName:name,cost:+p[3]||0,price:+p[4]||0,qty:+p[2]||0,amount:+p[5]||0,profit:+p[6]||0,date:p[0],time:(p[7]||'').trim()};
         const isDup=[...curSales,...sales].some(x=>x.date===rec.date&&x.userName===rec.userName&&+x.amount===+rec.amount&&+x.profit===+rec.profit&&+x.qty===+rec.qty);
         if(isDup){dup++;return;}
         sales.push(rec);
@@ -607,6 +626,58 @@ function importCSV(){
     r.readAsText(f);
   };
   inp.click();
+}
+
+/* ====== 用户明细：查看该用户每次充值（金额 / 时间 / 利润） ====== */
+function openUserHistory(u){
+  const all=DB.sales().filter(s=>s.userId===u.id).sort((a,b)=>
+    (b.date||'').localeCompare(a.date||'') || ((b.time||'')).localeCompare(a.time||''));
+  const totA=all.reduce((s,x)=>s+x.amount,0);
+  const totP=all.reduce((s,x)=>s+x.profit,0);
+  const m=(+u.price>0)?((+u.price-+u.cost)/+u.price):0;
+  let list='';
+  if(all.length===0){
+    list=`<div class="empty" style="padding:26px 10px">还没有充值记录</div>`;
+  }else{
+    all.forEach(s=>{
+      list+=`<div class="bar-row" style="background:var(--card2);margin-bottom:9px">
+        <div style="min-width:0">
+          <div class="l" style="font-size:14px">${esc(fmtDateTime(s))}</div>
+          <div class="l muted" style="font-size:12px;margin-top:2px">利润率 ${(m*100).toFixed(1)}%</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="l" style="font-size:16px;font-weight:700">${money(s.amount)}</div>
+          <div class="l" style="font-size:13px;color:var(--green);margin-top:2px">利润 ${money(s.profit)}</div>
+        </div>
+        <div class="del" data-hdel="${s.id}">删除</div>
+      </div>`;
+    });
+  }
+  $('#sheet').innerHTML=`
+    <div class="sheet-h"><span class="t">${esc(u.name)}</span><span class="x" data-close>×</span></div>
+    <div class="cards" style="margin:2px 0 14px">
+      <div class="card" style="background:var(--card2)"><div class="lbl">累计充值</div><div class="val blue" style="font-size:21px">${money(totA)}</div></div>
+      <div class="card" style="background:var(--card2)"><div class="lbl">累计利润</div><div class="val ${totP>=0?'green':'red'}" style="font-size:21px">${money(totP)}</div></div>
+    </div>
+    <div class="preview" style="margin-top:0">
+      <div class="pr"><span class="k">笔数</span><span class="v">${all.length} 笔</span></div>
+      <div class="pr"><span class="k">单位成本</span><span class="v">${money(u.cost)}</span></div>
+      <div class="pr"><span class="k">单位售价</span><span class="v">${money(u.price)}</span></div>
+      <div class="pr"><span class="k">利润率</span><span class="v">${(m*100).toFixed(1)}%</span></div>
+      ${u.note?`<div class="pr"><span class="k">备注</span><span class="v" style="font-weight:400;max-width:62%;text-align:right;white-space:pre-wrap">${esc(u.note)}</span></div>`:''}
+    </div>
+    <div class="section-title">充值明细</div>
+    ${list}
+    <button class="btn ghost" id="editUserFromHist" style="margin-top:6px">编辑资料</button>
+  `;
+  $('#mask').classList.add('show');
+  document.querySelector('[data-close]').onclick=closeSheet;
+  $('#editUserFromHist').onclick=()=>openUserModal(u);
+  document.querySelectorAll('[data-hdel]').forEach(b=>b.onclick=()=>{
+    if(!confirm('删除这笔记录？')) return;
+    const s=DB.sales(); const i=s.findIndex(x=>x.id===b.dataset.hdel);
+    if(i>=0){ s.splice(i,1); DB.setSales(s); render(); openUserHistory(u); toast('已删除'); }
+  });
 }
 
 /* ====== 启动 ====== */
@@ -633,8 +704,36 @@ $('#fab').onclick=()=>{ if(state.tab==='users') openUserModal(); else openSaleMo
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
 render();
 
-/* Service Worker */
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+/* Service Worker + 离线自检 */
+const SW_CACHE='profit-v3';
+let offlineOK=false;
+async function checkOffline(){
+  try{
+    if(!('caches' in window)) return false;
+    const c=await caches.open(SW_CACHE);
+    const r=await c.match('index.html',{ignoreSearch:true});
+    return !!r;
+  }catch(e){ return false; }
+}
+async function refreshOfflineRow(announce){
+  const ok=await checkOffline();
+  if(ok && !offlineOK && announce) toast('离线缓存完成，现在可以断网使用');
+  offlineOK=ok;
+  const el=document.getElementById('offRow');
+  if(el){
+    el.querySelector('.sub').textContent = ok ? '已就绪 · 可断开网络使用' : '尚未就绪 · 联网从桌面图标打开一次，等十几秒';
+    el.querySelector('.amt').textContent = ok ? '✓' : '…';
+  }
+}
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').then(reg=>{
+    const done=()=>setTimeout(()=>refreshOfflineRow(true),600);
+    const w=reg.installing||reg.waiting;
+    if(w) w.addEventListener('statechange',()=>{ if(w.state==='activated'||w.state==='redundant') done(); });
+    if(reg.active && reg.active.state==='activated') done();
+  }).catch(()=>{});
+  setTimeout(()=>refreshOfflineRow(false),1200);
+}
 </script>
 </body>
 </html>
