@@ -1,5 +1,5 @@
 // 离线缓存：让 App 在 iPhone 主屏打开时无需联网也可使用
-const CACHE='profit-v3';
+const CACHE='profit-v4';
 // index.html 排第一：就算后面的文件缓存失败，也要保证离线能打开主程序
 const FILES=['index.html','manifest.webmanifest','icon-192.png','icon-512.png'];
 self.addEventListener('install',e=>{

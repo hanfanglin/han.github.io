@@ -1,6 +1,6 @@
 {
-  "name": "利润记账",
-  "short_name": "利润记账",
+  "name": "一起发财",
+  "short_name": "一起发财",
   "description": "记录每日利润：用户名、成本、售价、销售额、利润",
   "start_url": "index.html",
   "display": "standalone",
@@ -8,7 +8,15 @@
   "background_color": "#f2f2f7",
   "theme_color": "#007aff",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
