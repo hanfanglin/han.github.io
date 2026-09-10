@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="利润记账">
+<meta name="theme-color" content="#007aff">
+<title>利润记账</title>
+<link rel="manifest" href="manifest.webmanifest" crossorigin="use-credentials">
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAF0UlEQVR4nO3ca2hWdQDH8d+z2TBnNJFlSqXRzSBLzMIuK2nlLfMSJUJBL0pLM0vSwkmkqOEKJYpszKLLC+0KUyvTUFv5ZmqaVmaJGqhlecNp2nTb04uCIEQ9/9+jzznn+X5e6Xx+55zpl+fZ5biMqrICQhXl+wKQbAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLC0yfcFuGbcpSl9I69aWtWnRmt35ewyRt2g2mEhwwc+0PwNObuMsy/xz0AzVmrLvsir4iLNG642OXrvO7VXdf+Q4bItya5HKQjor2aNWRgy7NlZE27JzTW8Mlgdzo28OnpcYxbl5gLyKPEBSVq+Ve+uDxlOrdSlHdyzD7xSI3qEDKet0Lb97tnzLg0BSXr6M+07EnnV7hzVDLXOW1qi14OOsHG3Zq+yTh0TKQlo7xFNXBIy7HeFHuwZft7pd6prWeRVa1aj69TcGn7e+EhJQJLeXqeV20KGcwapY7uQYa8uGn9TyHBugxp2hAxjKD0BSXpsoZqaI6/KSzV7YOTVP5/HFUf/+9vVqCnLIq9iK1UB/bxXM78MGT7US5WXRZs8dbN6dQk517jFamwKGcZTqgKSVP2VftwTMqwZqran/VXVrmWaVhlylrpNqtsUMoyttAV0rEWP1imbjTy8vKOev+N0Hzx3iEpLIp/iUJOe+CTyKubSFpCkr3/Rm9+EDCdWqEenUz9s5LUadFXI8auWaefBkGGcpTAgSc98rt8PR161KdIb96ooc7LHlLXVy3eHXNLqnZrbEDKMuXQGdOCoJnwaMrzxIo3rc7IHvDRQndpHPmxzq0bXqTX6C2v8pTMgSQs2aumWkOHMfrr4/BP/UUU3PXx9yDHnrNKG30KG8ZfagCSNXaSjxyOv2pfotSEneHtJsWqHKXPSF7gT2n5AU1dEXiVFmgPatl/Tgv7l7umu+675/xur+qp7ecjRxiwM6Tgp0hyQpNmrtHF3yPDVwSpr+99vu5dr8u0hx5m/IfCVNClSHlDwR68XnqfqAf/+OpNR7TCVFEc+yP7Qj+UTJOUBSWrYoZrVIcNRvXVrV0l6pLcquoUcYdIS/fFnyDBB0h+QpMlL9Wtj5FUmo9rhuqQs8HbV+u16a13IMFkKIqDGJo0P+h7C1eVaMzbkdtWm5sDvqCROQQQk6eMftHhzyPCC0pDVC/X6aW/IMHEKJSBJjy/S4WNn40Sb92hW/dk4URwUUEA7Duq5L874WbJZja7TsZYzfqKYyKgqDS/U347TdZ3zfRERvf+dRr6X74uwFdAzEM4EAoKFgGAhIFgICBYCgoWAYCEgWFLyhcRgLw7QpArrCCMW6MPvc3Q1CVToz0DTV2r3ofB5/faCrkcEdKhJk0N/1EFLq55M+w2Hp1ToAUl6Z73W7AwZzlub2v+sc/oISNmsVgT9YKHlW3N9KQlEQLAQECwp+TSe+4HyhWcgWAgIFgKChYBgISBYCAgWAoKFgGBJyRcSTbP669nbIq/uX6CPCvteDvEMBBMBwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQECwHBQkCwcE80LDwDwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQECwHBQkCwEBAsBAQLAcFCQLAQECwEBAsBwUJAsBAQLAQEy982uAKRTCUVIQAAAABJRU5ErkJggg==">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<style>
+  :root{
+    --bg:#f2f2f7; --card:#ffffff; --card2:#f7f7fa;
+    --txt:#1c1c1e; --txt2:#8e8e93; --sep:#e5e5ea;
+    --blue:#007aff; --green:#34c759; --red:#ff3b30; --orange:#ff9500;
+    --blur:rgba(255,255,255,.72);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#000000; --card:#1c1c1e; --card2:#2c2c2e;
+      --txt:#ffffff; --txt2:#98989f; --sep:#38383a; --blur:rgba(28,28,30,.72);}
+    .app.dark{ --bg:#000; --card:#1c1c1e; --card2:#2c2c2e; --txt:#fff; --txt2:#98989f; --sep:#38383a; --blur:rgba(28,28,30,.72);}
+  }
+  .app.dark{ --bg:#000; --card:#1c1c1e; --card2:#2c2c2e; --txt:#fff; --txt2:#98989f; --sep:#38383a; --blur:rgba(28,28,30,.72);}
+  .app.light{ --bg:#f2f2f7; --card:#fff; --card2:#f7f7fa; --txt:#1c1c1e; --txt2:#8e8e93; --sep:#e5e5ea; --blur:rgba(255,255,255,.72);}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;height:100%;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased;overflow:hidden;}
+  .app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
+
+  /* Header */
+  .header{padding-top:env(safe-area-inset-top);background:var(--blur);
+    backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:.5px solid var(--sep);position:sticky;top:0;z-index:20;}
+  .header-inner{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 8px;}
+  .h-title{font-size:28px;font-weight:700;letter-spacing:.3px;}
+  .h-right{display:flex;gap:8px;align-items:center;}
+  .h-date{font-size:15px;color:var(--txt2);display:flex;align-items:center;gap:6px;}
+  .iconbtn{width:34px;height:34px;border-radius:50%;border:none;background:var(--card2);
+    color:var(--blue);font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .iconbtn:active{opacity:.6;}
+
+  /* Content */
+  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px calc(90px + env(safe-area-inset-bottom));}
+  .section-title{font-size:13px;color:var(--txt2);font-weight:600;margin:6px 4px 8px;text-transform:uppercase;letter-spacing:.5px;}
+
+  /* Summary cards */
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;}
+  .card{background:var(--card);border-radius:16px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .card .lbl{font-size:13px;color:var(--txt2);margin-bottom:6px;}
+  .card .val{font-size:24px;font-weight:700;letter-spacing:.2px;}
+  .card .val.green{color:var(--green);}
+  .card .val.blue{color:var(--blue);}
+  .card .val.red{color:var(--red);}
+  .card.full{grid-column:1 / -1;}
+
+  /* List */
+  .list{background:var(--card);border-radius:14px;overflow:hidden;margin-bottom:14px;}
+  .row{display:flex;align-items:center;padding:13px 16px;border-bottom:.5px solid var(--sep);gap:12px;}
+  .row:last-child{border-bottom:none;}
+  .row .avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#0a84ff,#5e5ce6);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;flex-shrink:0;}
+  .row .main{flex:1;min-width:0;}
+  .row .name{font-size:16px;font-weight:600;}
+  .row .sub{font-size:13px;color:var(--txt2);margin-top:2px;}
+  .row .amt{text-align:right;flex-shrink:0;}
+  .row .amt .big{font-size:16px;font-weight:700;}
+  .row .amt .small{font-size:13px;color:var(--green);margin-top:2px;}
+  .row .del{color:var(--red);font-size:13px;margin-left:10px;cursor:pointer;padding:6px;}
+  .empty{text-align:center;color:var(--txt2);padding:50px 20px;font-size:15px;}
+  .empty .em{font-size:40px;margin-bottom:10px;}
+
+  /* FAB */
+  .fab{position:fixed;right:18px;bottom:calc(84px + env(safe-area-inset-bottom));
+    width:58px;height:58px;border-radius:50%;background:var(--blue);color:#fff;border:none;
+    font-size:30px;box-shadow:0 6px 18px rgba(0,122,255,.45);cursor:pointer;z-index:30;display:flex;align-items:center;justify-content:center;}
+  .fab:active{transform:scale(.93);}
+
+  /* Tab bar */
+  .tabbar{position:fixed;left:0;right:0;bottom:0;background:var(--blur);
+    backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-top:.5px solid var(--sep);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:25;}
+  .tab{flex:1;text-align:center;padding:8px 0 6px;color:var(--txt2);font-size:10px;cursor:pointer;border:none;background:none;}
+  .tab .ti{font-size:22px;line-height:1;margin-bottom:3px;display:flex;justify-content:center;}
+  .tab .ti svg{width:22px;height:22px;}
+  .tab.active{color:var(--blue);}
+
+  /* Modal */
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:flex-end;}
+  .mask.show{display:flex;animation:fade .2s;}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .sheet{background:var(--card);width:100%;border-radius:18px 18px 0 0;padding:8px 18px calc(20px + env(safe-area-inset-bottom));
+    animation:rise .26s cubic-bezier(.2,.8,.2,1);max-height:92vh;min-height:92vh;overflow-y:auto;}
+  @keyframes rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .sheet-h{display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px;}
+  .sheet-h .t{font-size:17px;font-weight:600;}
+  .sheet-h .x{font-size:26px;color:var(--txt2);cursor:pointer;line-height:1;padding:0 4px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;color:var(--txt2);margin-bottom:7px;font-weight:600;}
+  .field input,.field select{width:100%;background:var(--card2);border:none;border-radius:12px;
+    padding:13px 14px;font-size:16px;color:var(--txt);outline:none;font-family:inherit;}
+  .field textarea{width:100%;background:var(--card2);border:none;border-radius:12px;
+    padding:11px 14px;font-size:15px;color:var(--txt);outline:none;font-family:inherit;
+    line-height:1.5;min-height:78px;max-height:180px;resize:vertical;}
+  .field input:focus,.field select:focus,.field textarea:focus{box-shadow:0 0 0 2px var(--blue);}
+  .preview{background:var(--card2);border-radius:12px;padding:14px;margin:4px 0 16px;}
+  .preview .pr{display:flex;justify-content:space-between;padding:6px 0;font-size:15px;}
+  .preview .pr .k{color:var(--txt2);}
+  .preview .pr .v{font-weight:700;}
+  .preview .pr .v.green{color:var(--green);}
+  .btn{width:100%;background:var(--blue);color:#fff;border:none;border-radius:14px;padding:15px;
+    font-size:17px;font-weight:600;cursor:pointer;font-family:inherit;}
+  .btn:active{opacity:.85;}
+  .btn.ghost{background:var(--card2);color:var(--blue);}
+  .btn.danger{background:var(--red);}
+  .picker{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{padding:9px 14px;border-radius:20px;background:var(--card2);font-size:14px;color:var(--txt);cursor:pointer;border:1.5px solid transparent;}
+  .chip.sel{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .seg{display:flex;background:var(--card2);border-radius:10px;padding:3px;gap:3px;}
+  .seg button{flex:1;border:none;background:none;padding:9px;font-size:14px;border-radius:8px;color:var(--txt2);font-family:inherit;cursor:pointer;}
+  .seg button.on{background:var(--card);color:var(--blue);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+
+  .toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.82);
+    color:#fff;padding:14px 22px;border-radius:14px;font-size:15px;z-index:99;display:none;max-width:80%;text-align:center;}
+  .toast.show{display:block;animation:fade .2s;}
+  .muted{color:var(--txt2);}
+  .right{text-align:right;}
+  .bar-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--card);border-radius:14px;margin-bottom:10px;}
+  .bar-row .l{font-size:15px;}
+  .bar-row .r{font-size:15px;font-weight:600;}
+  .hr{height:.5px;background:var(--sep);margin:14px 0;}
+  select{appearance:none;-webkit-appearance:none;}
+  input[type=date]{color:var(--txt);}
+
+  /* iPhone 安装引导条 */
+  #iosHint{display:none;position:fixed;left:0;right:0;top:0;z-index:61;
+    background:#007aff;color:#fff;font-size:13px;line-height:1.5;
+    padding:calc(env(safe-area-inset-top) + 9px) 40px 9px 16px;text-align:left;
+    box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer;}
+  #iosHint b{font-weight:700;}
+  #iosHint .iclose{position:absolute;right:8px;top:calc(env(safe-area-inset-top) + 6px);
+    font-size:24px;line-height:1;padding:0 6px;opacity:.9;}
+  #iosHint .isteps{display:none;margin-top:8px;font-size:12.5px;opacity:.95;}
+  #iosHint .isteps.show{display:block;}
+  #iosHint ol{margin:6px 0 2px;padding-left:18px;}
+  #iosHint li{margin:3px 0;}
+
+  /* 微信内置浏览器提示条 */
+  #wkWarn{display:none;position:fixed;left:0;right:0;top:0;z-index:62;
+    background:#ff2d55;color:#fff;font-size:12.5px;line-height:1.5;
+    padding:calc(env(safe-area-inset-top) + 9px) 40px 9px 16px;text-align:left;
+    box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer;}
+  #wkWarn b{font-weight:700;}
+  #wkWarn .iclose{position:absolute;right:8px;top:calc(env(safe-area-inset-top) + 6px);
+    font-size:24px;line-height:1;padding:0 6px;opacity:.9;}
+  #wkWarn .wsteps{display:none;margin-top:8px;font-size:12px;opacity:.97;}
+  #wkWarn .wsteps.show{display:block;}
+  #wkWarn ol{margin:6px 0 2px;padding-left:18px;}
+  #wkWarn li{margin:3px 0;}
+</style>
+</head>
+<body>
+<noscript><div style="padding:40px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,PingFang SC,Helvetica,Arial,sans-serif;line-height:1.6">
+  <h2>利润记账</h2>
+  <p>请开启浏览器的 JavaScript 后刷新页面。</p>
+</div></noscript>
+<div class="app" id="app">
+  <div class="header">
+    <div class="header-inner">
+      <div class="h-title" id="pageTitle">今日</div>
+      <div class="h-right" id="headerRight"></div>
+    </div>
+  </div>
+
+  <div class="content" id="content"></div>
+
+  <button class="fab" id="fab" style="display:none">+</button>
+
+  <div class="tabbar" id="tabbar">
+    <button class="tab active" data-tab="today"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg></span>今日</button>
+    <button class="tab" data-tab="users"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></span>用户</button>
+    <button class="tab" data-tab="report"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span>报表</button>
+    <button class="tab" data-tab="settings"><span class="ti"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg></span>设置</button>
+  </div>
+</div>
+
+<div class="mask" id="mask"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+<div id="memWarn" style="display:none;position:fixed;left:0;right:0;top:0;z-index:60;background:#ff9500;color:#fff;font-size:12.5px;line-height:1.4;padding:calc(env(safe-area-inset-top) + 8px) 16px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.2)">⚠️ 当前为临时预览模式，刷新后数据会丢失。请用 Safari 打开网址并「添加到主屏幕」以永久保存在本机。</div>
+
+<div id="iosHint">
+  📲 想当 App 用？点 <b>Safari 底部「分享」⬆️ →「添加到主屏幕」</b>，即可全屏离线、数据只存本机。点此看步骤
+  <span class="iclose">×</span>
+  <div class="isteps">
+    <ol>
+      <li>用 <b>Safari</b> 打开本页面（别用微信/QQ 内置浏览器）。</li>
+      <li>点屏幕底部中间的「分享」按钮（一个⬆️方框箭头）。</li>
+      <li>向上滑，找到并点「<b>添加到主屏幕</b>」。</li>
+      <li>点「添加」。回到桌面就有一个图标，点开即全屏离线运行。</li>
+    </ol>
+    提示：第一次需联网打开一次；装好后完全离线，数据只在你这台手机上。
+  </div>
+</div>
+
+<div id="wkWarn">
+  ⚠️ 你在<b>微信</b>里打开，数据可能保存不住。点此看「能保存」的打开方法
+  <span class="iclose">×</span>
+  <div class="wsteps">
+    <b>想让数据留在手机上，二选一：</b>
+    <ol>
+      <li><b>最省事（纯本地）</b>：把文件存到手机「文件」App，再用 App Store 里的免费 App <b>Documents by Readdle</b> 打开它。数据就存在那个 App 里，离线、不联网。</li>
+      <li><b>最像原生 App</b>：让对方把文件发成一个<b>网址</b>（不是文件）发你微信，你点开 → 选「在 Safari 打开」→ 底部「分享」→「添加到主屏幕」。装好后完全离线，数据只在手机。</li>
+    </ol>
+    无论哪种，记得常去「设置 → 导出 CSV」备份，换手机也不怕丢。
+  </div>
+</div>
+
+<script>
+/* ====== 存储（localStorage 不可用时自动降级到内存，避免 file:// 白屏） ====== */
+const MEM_STORE={pf_users:'[]',pf_sales:'[]',pf_set:'{}'};
+let storageOK=false;
+try{localStorage.setItem('__t',1);localStorage.removeItem('__t');storageOK=true;}catch(e){storageOK=false;console.warn('localStorage 不可用，已降级到内存存储',e);}
+function lsGet(k){try{if(storageOK)return localStorage.getItem(k)||MEM_STORE[k];}catch(e){}return MEM_STORE[k];}
+function lsSet(k,v){try{if(storageOK)localStorage.setItem(k,v);}catch(e){}MEM_STORE[k]=v;}
+const DB = {
+  users:()=>JSON.parse(lsGet('pf_users')||'[]'),
+  sales:()=>JSON.parse(lsGet('pf_sales')||'[]'),
+  setUsers:v=>lsSet('pf_users',JSON.stringify(v)),
+  setSales:v=>lsSet('pf_sales',JSON.stringify(v)),
+  setting(k,d){const s=JSON.parse(lsGet('pf_set')||'{}');return d!==undefined?(s[k]=d,lsSet('pf_set',JSON.stringify(s)),d):(s[k]??d);},
+};
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
+const cur=()=>DB.setting('cur','¥');
+const money=n=>{const v=(+n||0);const neg=v<0;const a=Math.abs(Math.round(v*100)/100).toLocaleString('zh-CN',{minimumFractionDigits:0,maximumFractionDigits:2});return (neg?'-':'')+cur()+a;};
+const esc=s=>(s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const initials=n=>(n||'?').trim().slice(0,1).toUpperCase();
+
+let state={tab:'today', date:todayStr(), editingSale:null, saleUser:null, saleMode:'qty'};
+
+/* ====== 计算 ====== */
+// 利润 = (售价 − 成本) ÷ 售价 × 销售额
+function saleCalc(user,amount){
+  const cost=+user.cost||0, price=+user.price||0, amt=+amount||0;
+  const margin = price>0 ? (price-cost)/price : 0;
+  const profit = margin*amt;
+  return {amount:amt, profit, margin};
+}
+
+/* ====== 渲染 ====== */
+const $=s=>document.querySelector(s);
+function goTab(t){ state.tab=t; state.editingSale=null; state.saleUser=null; render(); }
+
+function render(){
+  // theme
+  const th=DB.setting('theme','auto');
+  $('#app').className='app'+(th==='light'?' light':th==='dark'?' dark':'');
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===state.tab));
+  $('#fab').style.display = (state.tab==='today'||state.tab==='users')?'flex':'none';
+  const titles={today:'今日',users:'用户',report:'报表',settings:'设置'};
+  $('#pageTitle').textContent=titles[state.tab];
+  // header right
+  let hr='';
+  if(state.tab==='today') hr=`<div class="h-date">📆 <input type="date" id="datePick" value="${state.date}" style="background:none;border:none;color:var(--txt2);font-size:15px;font-family:inherit;outline:none;"></div>`;
+  if(state.tab==='users') hr=`<button class="iconbtn" id="addUserBtn">＋</button>`;
+  if(state.tab==='report') hr=`<button class="iconbtn" id="exportBtn">⤓</button>`;
+  $('#headerRight').innerHTML=hr;
+  if(state.tab==='today') $('#datePick').onchange=e=>{state.date=e.target.value;$('#datePick').blur();render();};
+  if(state.tab==='users') $('#addUserBtn').onclick=()=>openUserModal();
+  if(state.tab==='report') $('#exportBtn').onclick=exportCSV;
+
+  const c=$('#content');
+  if(state.tab==='today') c.innerHTML=viewToday();
+  else if(state.tab==='users') c.innerHTML=viewUsers();
+  else if(state.tab==='report') c.innerHTML=viewReport();
+  else if(state.tab==='settings') c.innerHTML=viewSettings();
+
+  bindContent();
+}
+
+/* ---- 今日 ---- */
+function viewToday(){
+  const sales=DB.sales().filter(s=>s.date===state.date).sort((a,b)=>b.createdAt-a.createdAt);
+  const totalAmt=sales.reduce((s,x)=>s+x.amount,0);
+  const totalProfit=sales.reduce((s,x)=>s+x.profit,0);
+  let html=`<div class="cards">
+    <div class="card"><div class="lbl">销售额</div><div class="val blue">${money(totalAmt)}</div></div>
+    <div class="card"><div class="lbl">利润</div><div class="val ${totalProfit>=0?'green':'red'}">${money(totalProfit)}</div></div>
+    <div class="card full"><div class="lbl">订单数</div><div class="val">${sales.length} 笔</div></div>
+  </div>`;
+  html+=`<div class="section-title">${state.date} 记录</div>`;
+  if(sales.length===0){
+    const noUsers=DB.users().length===0;
+    html+=`<div class="empty"><div class="em"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--txt2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg></div>
+    ${noUsers?'还没有用户<br>点击下方「用户」→ 右上角 ＋ 添加':'这一天还没有记录<br>点右下角 + 添加一笔销售'}
+    </div>`;
+  }else{
+    html+='<div class="list">';
+    sales.forEach(s=>{
+      const m=(+s.price>0)?((+s.price-+s.cost)/+s.price):0;
+      html+=`<div class="row">
+        <div class="avatar">${esc(initials(s.userName))}</div>
+        <div class="main">
+          <div class="name">${esc(s.userName)}</div>
+          <div class="sub">利润率 ${(m*100).toFixed(1)}% · 售价 ${money(s.price)} · 成本 ${money(s.cost)}</div>
+        </div>
+        <div class="amt">
+          <div class="big">${money(s.amount)}</div>
+          <div class="small">利润 ${money(s.profit)}</div>
+        </div>
+        <div class="del" data-del="${s.id}">删除</div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  return html;
+}
+
+/* ---- 用户 ---- */
+function viewUsers(){
+  const users=DB.users();
+  const sales=DB.sales();
+  let html=`<div class="section-title">用户（${users.length}）</div>`;
+  if(users.length===0){
+    html+=`<div class="empty"><div class="em"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--txt2)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>还没有用户<br>点右上角 ＋ 添加，设置成本与售价</div>`;
+  }else{
+    html+='<div class="list">';
+    users.forEach(u=>{
+      const us=sales.filter(s=>s.userId===u.id);
+      const amt=us.reduce((s,x)=>s+x.amount,0);
+      const pf=us.reduce((s,x)=>s+x.profit,0);
+      html+=`<div class="row" data-user="${u.id}">
+        <div class="avatar">${esc(initials(u.name))}</div>
+        <div class="main">
+          <div class="name">${esc(u.name)}</div>
+          <div class="sub">成本 ${money(u.cost)} · 售价 ${money(u.price)} · ${us.length} 笔${u.note?' · 备注 '+esc(u.note.slice(0,30))+(u.note.length>30?'…':''):''}</div>
+        </div>
+        <div class="amt">
+          <div class="big">${money(amt)}</div>
+          <div class="small">利润 ${money(pf)}</div>
+        </div>
+      </div>`;
+    });
+    html+='</div>';
+  }
+  return html;
+}
+
+/* ---- 报表 ---- */
+function viewReport(){
+  const users=DB.users(); const sales=DB.sales();
+  // 总计
+  const tAmt=sales.reduce((s,x)=>s+x.amount,0);
+  const tPf=sales.reduce((s,x)=>s+x.profit,0);
+  let html=`<div class="cards">
+    <div class="card"><div class="lbl">累计销售额</div><div class="val blue">${money(tAmt)}</div></div>
+    <div class="card"><div class="lbl">累计利润</div><div class="val ${tPf>=0?'green':'red'}">${money(tPf)}</div></div>
+  </div>`;
+  // 按用户
+  html+=`<div class="section-title">按用户汇总</div><div class="list">`;
+  if(users.length===0) html+=`<div class="row"><div class="main muted">暂无用户数据</div></div>`;
+  users.slice().sort((a,b)=>{
+    const pa=DB.sales().filter(s=>s.userId===a.id).reduce((s,x)=>s+x.profit,0);
+    const pb=DB.sales().filter(s=>s.userId===b.id).reduce((s,x)=>s+x.profit,0);
+    return pb-pa;
+  }).forEach(u=>{
+    const us=sales.filter(s=>s.userId===u.id);
+    const amt=us.reduce((s,x)=>s+x.amount,0);
+    const pf=us.reduce((s,x)=>s+x.profit,0);
+    html+=`<div class="row">
+      <div class="avatar">${esc(initials(u.name))}</div>
+      <div class="main"><div class="name">${esc(u.name)}</div><div class="sub">${us.length} 笔销售</div></div>
+      <div class="amt"><div class="big">${money(amt)}</div><div class="small">利润 ${money(pf)}</div></div>
+    </div>`;
+  });
+  html+='</div>';
+  // 按日
+  html+=`<div class="section-title">按日汇总</div><div class="list">`;
+  const byDay={};
+  sales.forEach(s=>{byDay[s.date]=byDay[s.date]||{a:0,p:0,n:0};byDay[s.date].a+=s.amount;byDay[s.date].p+=s.profit;byDay[s.date].n++;});
+  const days=Object.keys(byDay).sort().reverse();
+  if(days.length===0) html+=`<div class="row"><div class="main muted">暂无销售数据</div></div>`;
+  days.forEach(d=>{
+    const o=byDay[d];
+    html+=`<div class="row"><div class="main"><div class="name">${d}</div><div class="sub">${o.n} 笔</div></div>
+      <div class="amt"><div class="big">${money(o.a)}</div><div class="small">利润 ${money(o.p)}</div></div></div>`;
+  });
+  html+='</div>';
+  return html;
+}
+
+/* ---- 设置 ---- */
+function viewSettings(){
+  const cur=DB.setting('cur','¥'); const th=DB.setting('theme','auto');
+  const users=DB.users(), sales=DB.sales();
+  return `
+  <div class="section-title">偏好</div>
+  <div class="list">
+    <div class="row" id="setCur"><div class="main"><div class="name">货币符号</div><div class="sub">当前：${esc(cur)}</div></div><div class="amt">›</div></div>
+    <div class="row" id="setTheme"><div class="main"><div class="name">外观</div><div class="sub">${th==='light'?'浅色':th==='dark'?'深色':'跟随系统'}</div></div><div class="amt">›</div></div>
+  </div>
+  <div class="section-title">数据</div>
+  <div class="list">
+    <div class="row" id="exp"><div class="main"><div class="name">导出 CSV</div><div class="sub">${sales.length} 条销售记录</div></div><div class="amt">›</div></div>
+    <div class="row" id="imp"><div class="main"><div class="name">导入 CSV 备份</div></div><div class="amt">›</div></div>
+    <div class="row" id="clear"><div class="main"><div class="name" style="color:var(--red)">清空全部数据</div><div class="sub">${users.length} 用户 · ${sales.length} 记录</div></div><div class="amt">›</div></div>
+  </div>
+  <div class="section-title">关于</div>
+  <div class="list"><div class="row"><div class="main"><div class="name">利润记账</div><div class="sub">本地存储 · 不上传任何数据</div></div></div></div>
+  <div style="text-align:center;color:var(--txt2);font-size:12px;margin-top:18px">在 iPhone Safari 中「添加到主屏幕」即可像 App 一样使用</div>
+  `;
+}
+
+/* ====== 事件绑定 ====== */
+function bindContent(){
+  // 今日删除
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.del; const s=DB.sales(); const i=s.findIndex(x=>x.id===id);
+    if(i>=0){ if(confirm('删除这笔记录？')){ s.splice(i,1); DB.setSales(s); render(); } }
+  });
+  // 用户点击 -> 编辑
+  document.querySelectorAll('[data-user]').forEach(b=>b.onclick=()=>{
+    const u=DB.users().find(x=>x.id===b.dataset.user); if(u) openUserModal(u);
+  });
+  // 设置
+  const setCur=$('#setCur'), setTheme=$('#setTheme'), exp=$('#exp'), imp=$('#imp'), clear=$('#clear');
+  if(setCur) setCur.onclick=()=>{const v=prompt('货币符号',DB.setting('cur','¥'));if(v!==null){DB.setting('cur',v.trim()||'¥');render();}};
+  if(setTheme) setTheme.onclick=()=>{
+    const cur=DB.setting('theme','auto');
+    const next=cur==='auto'?'light':cur==='light'?'dark':'auto';
+    DB.setting('theme',next); render(); toast('外观：'+(next==='light'?'浅色':next==='dark'?'深色':'跟随系统'));
+  };
+  if(exp) exp.onclick=exportCSV;
+  if(imp) imp.onclick=importCSV;
+  if(clear) clear.onclick=()=>{
+    if(confirm('确定清空所有用户和记录？此操作不可恢复。')){
+      if(confirm('再次确认：真的要删除全部数据吗？')){DB.setUsers([]);DB.setSales([]);render();toast('已清空');}
+    }
+  };
+}
+
+/* ====== 销售弹窗 ====== */
+function openSaleModal(){
+  const users=DB.users();
+  if(users.length===0){ toast('请先添加用户'); openUserModal(); return; }
+  state.editingSale=null;
+  const user=users[0]; state.saleUser=user.id; state._amt='';
+  showSaleSheet();
+}
+function showSaleSheet(){
+  const users=DB.users();
+  const user=users.find(u=>u.id===state.saleUser)||users[0];
+  const amt=state._amt!==undefined?state._amt:'';
+  const {amount,profit,margin}=saleCalc(user,amt);
+  const chips=users.map(u=>`<div class="chip ${u.id===state.saleUser?'sel':''}" data-uid="${u.id}">${esc(u.name)}</div>`).join('');
+  $('#sheet').innerHTML=`
+    <div class="sheet-h"><span class="t">添加销售</span><span class="x" data-close>×</span></div>
+    <div class="field"><label>选择用户</label><div class="picker">${chips}</div></div>
+    <div class="field"><label>销售额（${esc(cur())}）</label><input type="number" inputmode="decimal" id="amt" value="${amt}" min="0" step="0.01" placeholder="实际收款金额"></div>
+    <div class="preview">
+      <div class="pr"><span class="k">单位成本</span><span class="v">${money(user.cost)}</span></div>
+      <div class="pr"><span class="k">单位售价</span><span class="v">${money(user.price)}</span></div>
+      <div class="pr"><span class="k">利润率</span><span class="v">${(margin*100).toFixed(1)}%</span></div>
+      <div class="pr"><span class="k">销售额</span><span class="v">${money(amount)}</span></div>
+      <div class="pr"><span class="k">利润</span><span class="v green">${money(profit)}</span></div>
+    </div>
+    <button class="btn" id="saveSale">保存</button>
+  `;
+  $('#mask').classList.add('show');
+  document.querySelectorAll('[data-uid]').forEach(c=>c.onclick=()=>{state.saleUser=c.dataset.uid;state._amt=$('#amt').value;showSaleSheet();});
+  document.querySelector('[data-close]').onclick=closeSheet;
+  const upd=()=>{
+    state._amt=$('#amt').value;
+    const u=DB.users().find(x=>x.id===state.saleUser);
+    const r=saleCalc(u,state._amt);
+    const vs=$('#sheet').querySelectorAll('.preview .pr .v');
+    vs[2].textContent=(r.margin*100).toFixed(1)+'%';
+    vs[3].textContent=money(r.amount);
+    vs[4].textContent=money(r.profit);
+  };
+  $('#amt').oninput=upd;
+  $('#saveSale').onclick=()=>{
+    const u=DB.users().find(x=>x.id===state.saleUser);
+    const a=parseFloat($('#amt').value);
+    if(!u||!(a>0)){toast('请输入有效销售额');return;}
+    const {profit,margin}=saleCalc(u,a);
+    const q=(+u.price>0)? a/(+u.price) : 0;  // 派生数量，仅用于展示
+    const sales=DB.sales();
+    sales.push({id:uid(),userId:u.id,userName:u.name,cost:+u.cost||0,price:+u.price||0,
+      qty:q,amount:a,profit,margin,date:state.date,createdAt:Date.now()});
+    DB.setSales(sales); state._amt=''; closeSheet(); render(); toast('已保存 · 利润 '+money(profit));
+  };
+}
+
+/* ====== 用户弹窗 ====== */
+function openUserModal(edit){
+  state._editUser=edit||null;
+  $('#sheet').innerHTML=`
+    <div class="sheet-h"><span class="t">${edit?'编辑用户':'添加用户'}</span><span class="x" data-close>×</span></div>
+    <div class="field"><label>用户名</label><input id="uName" placeholder="如：张三" value="${edit?esc(edit.name):''}"></div>
+    <div class="field"><label>单位成本（${esc(cur())}）</label><input id="uCost" type="number" inputmode="decimal" placeholder="0" value="${edit?edit.cost:''}"></div>
+    <div class="field"><label>单位售价（${esc(cur())}）</label><input id="uPrice" type="number" inputmode="decimal" placeholder="0" value="${edit?edit.price:''}"></div>
+    <div class="field"><label>备注（可记录联系方式、偏好、欠款等）</label><textarea id="uNote" rows="3" placeholder="如：微信 wx123、老客户爱点微辣">${edit?esc(edit.note||''):''}</textarea></div>
+    <button class="btn" id="saveUser">保存</button>
+    ${edit?'<button class="btn danger" id="delUser" style="margin-top:10px">删除该用户</button>':''}
+  `;
+  $('#mask').classList.add('show');
+  document.querySelector('[data-close]').onclick=closeSheet;
+  $('#saveUser').onclick=()=>{
+    const name=$('#uName').value.trim(); const cost=$('#uCost').value; const price=$('#uPrice').value;
+    const note=$('#uNote').value;
+    if(!name){toast('请输入用户名');return;}
+    const users=DB.users();
+    if(state._editUser){
+      const u=users.find(x=>x.id===state._editUser.id); u.name=name;u.cost=+cost||0;u.price=+price||0;u.note=note;
+    }else{ users.push({id:uid(),name,cost:+cost||0,price:+price||0,note}); }
+    DB.setUsers(users); closeSheet(); render(); toast('已保存');
+  };
+  if(edit){ $('#delUser').onclick=()=>{
+    if(confirm('删除用户「'+edit.name+'」？其历史销售记录也会保留但不再关联。')){
+      const users=DB.users(); const i=users.findIndex(x=>x.id===edit.id); if(i>=0)users.splice(i,1);
+      DB.setUsers(users); closeSheet(); render();
+    }
+  };}
+}
+
+/* ====== 工具 ====== */
+function closeSheet(){$('#mask').classList.remove('show');}
+$('#mask').onclick=e=>{if(e.target.id==='mask')closeSheet();};
+function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
+
+// 把字段安全写入 CSV：含逗号/引号/换行时加引号并转义
+function csvCell(v){ v=(v??'').toString(); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+// 解析整份 CSV：支持引号字段、转义双引号、以及引号内跨行的备注
+function parseCSVText(text){
+  text=(text||'').replace(/^\ufeff/,'');
+  const rows=[]; let row=[]; let cur=''; let q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){cur+='"';i++;} else q=false; }
+      else cur+=ch;              // 含换行也照收（多行备注）
+    }else{
+      if(ch==='"') q=true;
+      else if(ch===','){ row.push(cur); cur=''; }
+      else if(ch==='\n'){ row.push(cur); rows.push(row); row=[]; cur=''; }
+      else if(ch!=='\r') cur+=ch;
+    }
+  }
+  row.push(cur); rows.push(row);
+  return rows.filter(r=>!(r.length===1&&r[0].trim()===''));
+}
+function exportCSV(){
+  const users=DB.users(); const sales=DB.sales().sort((a,b)=>a.date.localeCompare(b.date));
+  // 一份文件含两部分：用户（含备注） + 销售记录
+  let csv='[用户]\n';
+  csv+='用户名,单位成本,单位售价,备注\n';
+  users.forEach(u=>{csv+=[u.name,u.cost,u.price,u.note||''].map(csvCell).join(',')+'\n';});
+  csv+='\n[销售]\n';
+  csv+='日期,用户名,数量,单位成本,单位售价,销售额,利润\n';
+  sales.forEach(s=>{csv+=[s.date,csvCell(s.userName),s.qty,s.cost,s.price,s.amount,s.profit].map(csvCell).join(',')+'\n';});
+  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='利润记账_'+todayStr()+'.csv';a.click();toast('已导出 '+users.length+' 用户 / '+sales.length+' 条记录');
+}
+function importCSV(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.csv';
+  inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{try{
+      const rows=parseCSVText(r.result);
+      const ui=rows.findIndex(r=>r.length===1&&r[0]==='[用户]');
+      const si=rows.findIndex(r=>r.length===1&&r[0]==='[销售]');
+      let userRows=[], saleRows=[];
+      if(ui>=0||si>=0){
+        // 新版：分段解析
+        userRows = ui>=0 ? rows.slice(ui+2, si>=0?si:rows.length) : [];
+        saleRows = si>=0 ? rows.slice(si+2) : [];
+      }else{
+        // 老版备份：整份都是销售记录（去掉表头）
+        saleRows = rows.slice(1);
+      }
+      const users=DB.users();
+      // 1) 用户：按名匹配并覆盖成本/售价/备注（还原备份语义）
+      let uNew=0,uUpd=0;
+      userRows.forEach(p=>{ if(p.length<2)return;
+        const name=p[0]; let u=users.find(x=>x.name===name);
+        if(u){ if(p[1]!=='')u.cost=+p[1]||0; if(p[2]!=='')u.price=+p[2]||0; if(p[3]!==undefined)u.note=p[3]; uUpd++; }
+        else { users.push({id:uid(),name,cost:+p[1]||0,price:+p[2]||0,note:p[3]||''}); uNew++; }
+      });
+      // 2) 销售：追加 + 去重（同一份备份反复导入不会翻倍）
+      const curSales=DB.sales(); const sales=[]; let dup=0;
+      saleRows.forEach(p=>{ if(p.length<7)return;
+        const name=p[1];
+        let u=users.find(x=>x.name===name); if(!u){u={id:uid(),name,cost:+p[3]||0,price:+p[4]||0,note:''};users.push(u);}
+        const rec={id:uid(),userId:u.id,userName:name,cost:+p[3]||0,price:+p[4]||0,qty:+p[2]||0,amount:+p[5]||0,profit:+p[6]||0,date:p[0],createdAt:Date.now()};
+        const isDup=[...curSales,...sales].some(x=>x.date===rec.date&&x.userName===rec.userName&&+x.amount===+rec.amount&&+x.profit===+rec.profit&&+x.qty===+rec.qty);
+        if(isDup){dup++;return;}
+        sales.push(rec);
+      });
+      DB.setUsers(users); DB.setSales(curSales.concat(sales)); render();
+      toast('已导入：用户 +'+uNew+'/更新'+uUpd+'，销售 +'+sales.length+' 条'+(dup?'（跳过重复 '+dup+' 条）':''));
+    }catch(e){toast('导入失败：文件格式不正确');}};
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+/* ====== 启动 ====== */
+function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream; }
+const inWeChat = /MicroMessenger/i.test(navigator.userAgent);
+
+// 顶部提示：同一时间只显示最该看的那一条，避免叠在一起
+if(inWeChat){
+  const w=document.getElementById('wkWarn');
+  if(w){ w.style.display='block';
+    w.querySelector('.iclose').onclick=(e)=>{e.stopPropagation();w.style.display='none';};
+    w.onclick=()=>w.querySelector('.wsteps').classList.toggle('show');
+  }
+}else if(!storageOK){
+  const w=document.getElementById('memWarn'); if(w) w.style.display='block';
+}else if(isIOS() && !navigator.standalone && storageOK){
+  const hint=document.getElementById('iosHint');
+  if(hint){ hint.style.display='block';
+    hint.querySelector('.iclose').onclick=(e)=>{e.stopPropagation();hint.style.display='none';};
+    hint.onclick=()=>hint.querySelector('.isteps').classList.toggle('show');
+  }
+}
+$('#fab').onclick=()=>{ if(state.tab==='users') openUserModal(); else openSaleModal(); };
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
+render();
+
+/* Service Worker */
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
+</script>
+</body>
+</html>
