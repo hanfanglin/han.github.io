@@ -104,10 +104,10 @@
   .row .amt .small{font-size:12.5px;color:var(--green);margin-top:3px;font-variant-numeric:tabular-nums;}
   .row .amt.chev{color:var(--txt2);font-size:20px;font-weight:400;line-height:1;}
   .row .amt .small.red{color:var(--red);}
-  .del{flex:none;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    background:rgba(255,59,48,.1);color:var(--red);margin-left:2px;cursor:pointer;}
-  .del svg{width:16px;height:16px;}
-  .del:active{background:rgba(255,59,48,.22);transform:scale(.9);}
+  .del{flex:none;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    background:rgba(255,59,48,.12);color:var(--red);margin-left:6px;cursor:pointer;border:1px solid rgba(255,59,48,.25);}
+  .del svg{width:19px;height:19px;}
+  .del:active{background:rgba(255,59,48,.24);transform:scale(.92);}
   .empty{text-align:center;color:var(--txt2);padding:0 20px;font-size:15px;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:calc(100vh - 145px - env(safe-area-inset-bottom));line-height:1.7;}
   .empty.flat{min-height:auto;padding:30px 10px;}
   .empty .em{width:64px;height:64px;border-radius:20px;background:var(--card2);display:flex;
@@ -859,14 +859,17 @@ function viewSettle(){
     archives.slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).forEach(a=>{
       html+=`<div class="row" data-arch="${esc(a.id)}">
         <div class="avatar" style="font-size:14px">${esc(initials(a.userName))}</div>
-        <div class="main">
+        <div class="main" style="min-width:0">
           <div class="name">${esc(a.userName||'未命名')} ${a.partial?'<span style="font-size:11px;color:var(--orange);font-weight:400">部分</span>':''}</div>
           <div class="sub">${esc(a.dateFrom)} ~ ${esc(a.dateTo)}</div>
           <div class="sub" style="font-size:12px;margin-top:3px">${esc(fmtArchTime(a))}${a.partial?' · 按金额结算':' · '+a.count+' 笔'}</div>
         </div>
-        <div class="amt">
-          <div class="big">${money(a.amount)}</div>
-          <div class="small">利润 ${money(a.profit)}</div>
+        <div class="amt" style="flex:none;display:flex;align-items:center;gap:6px">
+          <div style="text-align:right">
+            <div class="big">${money(a.amount)}</div>
+            <div class="small">利润 ${money(a.profit)}</div>
+          </div>
+          <div class="del" data-darch="${esc(a.id)}" title="删除归档">${ICO.trash}</div>
         </div>
       </div>`;
     });
@@ -877,6 +880,20 @@ function viewSettle(){
 function bindSettle(){
   document.querySelectorAll('[data-arch]').forEach(b=>b.onclick=()=>{
     const a=DB.archives().find(x=>x.id===b.dataset.arch); if(a) openArchiveDetail(a);
+  });
+  // 归档删除按钮：阻止冒泡，避免误触打开详情
+  document.querySelectorAll('[data-darch]').forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
+    const id=b.dataset.darch;
+    const a=DB.archives().find(x=>x.id===id);
+    if(!a) return;
+    if(!confirm(`删除这份归档？${a.partial?'':a.count+' 笔记录将恢复为「待结算」。'}`)) return;
+    const sales=DB.sales(); sales.forEach(s=>{ if(s.settled===id) s.settled=''; });
+    DB.setSales(sales);
+    const archives=DB.archives(); const i=archives.findIndex(x=>x.id===id);
+    if(i>=0) archives.splice(i,1);
+    DB.setArchives(archives);
+    render(); toast('已删除归档');
   });
   document.querySelectorAll('[data-su]').forEach(b=>b.onclick=()=>openSettleModal(b.dataset.su));
   const btn=$('#settleAllBtn'); if(btn) btn.onclick=()=>openSettleModal(null);
@@ -1055,7 +1072,8 @@ function openArchiveDetail(arch){
     if(i>=0)archives.splice(i,1); DB.setArchives(archives);
     closeSheet(); render(); toast('已解除归档');
   };
-  document.querySelectorAll('[data-adel]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-adel]').forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
     if(!confirm('删除这笔记录？'))return;
     const s=DB.sales(); const i=s.findIndex(x=>x.id===b.dataset.adel);
     if(i>=0){ s.splice(i,1); DB.setSales(s); syncArchive(arch.id); render();
@@ -1118,7 +1136,8 @@ function viewSettings(){
 /* ====== 事件绑定 ====== */
 function bindContent(){
   // 今日删除
-  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
     const id=b.dataset.del; const s=DB.sales(); const i=s.findIndex(x=>x.id===id);
     if(i>=0){ if(confirm('删除这笔记录？')){ const rec=s[i]; s.splice(i,1); DB.setSales(s); if(rec.settled)syncArchive(rec.settled); render(); } }
   });
@@ -1414,7 +1433,8 @@ function openUserHistory(u){
   $('#mask').classList.add('show');
   document.querySelector('[data-close]').onclick=closeSheet;
   $('#editUserFromHist').onclick=()=>openUserModal(u);
-  document.querySelectorAll('[data-hdel]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-hdel]').forEach(b=>b.onclick=(e)=>{
+    e.stopPropagation();
     if(!confirm('删除这笔记录？')) return;
     const s=DB.sales(); const i=s.findIndex(x=>x.id===b.dataset.hdel);
     if(i>=0){ const rec=s[i]; s.splice(i,1); DB.setSales(s); if(rec.settled)syncArchive(rec.settled); render(); openUserHistory(u); toast('已删除'); }
