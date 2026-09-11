@@ -155,18 +155,22 @@
   .tab:active .ti{transform:scale(.9);}
 
   /* Modal */
-  .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:flex-end;}
+  .mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:flex-end;
+    overflow:hidden;touch-action:none;}
   .mask.show{display:flex;animation:fade .2s;}
   @keyframes fade{from{opacity:0}to{opacity:1}}
   .sheet{position:relative;background:var(--card);width:100%;border-radius:24px 24px 0 0;
     padding:14px 18px calc(20px + env(safe-area-inset-bottom));
     animation:rise .28s cubic-bezier(.2,.8,.2,1);max-height:92vh;min-height:60vh;overflow-y:auto;
+    overflow-x:hidden;overscroll-behavior:contain;touch-action:pan-y;
+    -webkit-overflow-scrolling:touch;max-width:100vw;
     box-shadow:0 -6px 26px rgba(0,0,0,.14);}
   .sheet.lock-x{overflow-x:hidden;touch-action:pan-y;}
   .sheet::before{content:'';position:absolute;top:7px;left:50%;transform:translateX(-50%);
-    width:40px;height:5px;border-radius:3px;background:var(--sep);}
+    width:40px;height:5px;border-radius:3px;background:var(--sep);z-index:2;}
   @keyframes rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
-  .sheet-h{display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px;}
+  .sheet-h{position:sticky;top:-14px;background:var(--card);z-index:5;
+    display:flex;align-items:center;justify-content:space-between;padding:10px 0 14px;}
   .sheet-h .t{font-size:17px;font-weight:600;flex:1;padding-right:8px;}
   .sheet-h .x{flex:none;width:42px;height:42px;margin:-8px -6px -8px 0;display:flex;align-items:center;justify-content:center;
     border-radius:50%;background:var(--card2);color:var(--txt2);cursor:pointer;line-height:1;
@@ -220,6 +224,19 @@
   .chip.sel{background:linear-gradient(135deg,#0a84ff,#5e5ce6);color:#fff;border-color:transparent;
     box-shadow:0 4px 12px rgba(10,132,255,.3);}
   .chip:active{transform:scale(.95);}
+  /* 用户下拉选择（用户多时排版更整齐） */
+  .uselect{position:relative;}
+  .uselect select{appearance:none;-webkit-appearance:none;-moz-appearance:none;
+    width:100%;background:var(--card2);border:1px solid transparent;border-radius:14px;
+    padding:14px 42px 14px 14px;font-size:16px;color:var(--txt);outline:none;font-family:inherit;
+    cursor:pointer;transition:border-color .15s;text-overflow:ellipsis;}
+  .uselect select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,122,255,.15);}
+  .uselect::after{content:'';position:absolute;right:17px;top:50%;width:9px;height:9px;
+    border-right:2px solid var(--txt2);border-bottom:2px solid var(--txt2);
+    transform:translateY(-70%) rotate(45deg);pointer-events:none;}
+  .uselect .uinfo{display:flex;gap:6px;margin-top:7px;font-size:12.5px;color:var(--txt2);padding-left:2px;
+    flex-wrap:wrap;}
+  .uselect .uinfo b{color:var(--txt);font-weight:600;font-variant-numeric:tabular-nums;}
   .seg{display:flex;background:var(--card2);border-radius:12px;padding:4px;gap:4px;}
   .seg button{flex:1;border:none;background:none;padding:10px;font-size:14px;border-radius:9px;
     color:var(--txt2);font-family:inherit;cursor:pointer;font-weight:500;transition:background .15s;}
@@ -1202,8 +1219,10 @@ function viewSettings(){
   </div>
   <div class="section-title">数据</div>
   <div class="list">
-    <div class="row" id="exp"><div class="main"><div class="name">导出 CSV</div><div class="sub">${sales.length} 条销售记录</div></div><div class="amt chev">›</div></div>
+    <div class="row" id="exp"><div class="main"><div class="name">导出 CSV</div><div class="sub">下载 .csv 文件 · ${sales.length} 条销售记录</div></div><div class="amt chev">›</div></div>
     <div class="row" id="imp"><div class="main"><div class="name">导入 CSV 备份</div></div><div class="amt chev">›</div></div>
+    <div class="row" id="expJson"><div class="main"><div class="name">导出数据（JSON）</div><div class="sub">页面内预览，可复制或下载完整备份</div></div><div class="amt chev">›</div></div>
+    <div class="row" id="impJson"><div class="main"><div class="name">导入数据（JSON）</div></div><div class="amt chev">›</div></div>
     <div class="row" id="clear"><div class="main"><div class="name" style="color:var(--red)">清空全部数据</div><div class="sub">${users.length} 用户 · ${sales.length} 记录</div></div><div class="amt chev">›</div></div>
   </div>
   <div class="section-title">离线</div>
@@ -1238,6 +1257,7 @@ function bindContent(){
   if(emptyAddUser) emptyAddUser.onclick=()=>openUserModal();
   // 设置
   const setCur=$('#setCur'), setTheme=$('#setTheme'), exp=$('#exp'), imp=$('#imp'), clear=$('#clear'), chgPwd=$('#chgPwd');
+  const expJson=$('#expJson'), impJson=$('#impJson');
   if(setCur) setCur.onclick=()=>{const v=prompt('货币符号',DB.setting('cur')||'¥');if(v!==null){DB.setting('cur',v.trim()||'¥');render();}};
   if(setTheme) setTheme.onclick=()=>{
     const cur=DB.setting('theme')||'auto';
@@ -1246,6 +1266,8 @@ function bindContent(){
   };
   if(exp) exp.onclick=exportCSV;
   if(imp) imp.onclick=importCSV;
+  if(expJson) expJson.onclick=exportJSON;
+  if(impJson) impJson.onclick=importJSON;
   if(chgPwd) chgPwd.onclick=openChangePwd;
   // 云同步
   const syncCfg=$('#syncCfg'), syncGo=$('#syncGo');
@@ -1306,10 +1328,15 @@ function showSaleSheet(){
   const amt=state._amt!==undefined?state._amt:'';
   const tm=state._time||nowHM();
   const {amount,profit,margin}=saleCalc(user,amt);
-  const chips=users.map(u=>`<div class="chip ${u.id===state.saleUser?'sel':''}" data-uid="${u.id}">${esc(u.name)}</div>`).join('');
+  const opts=users.map(u=>`<option value="${esc(u.id)}" ${u.id===state.saleUser?'selected':''}>${esc(u.name)}</option>`).join('');
   $('#sheet').innerHTML=`
     <div class="sheet-h"><span class="t">添加销售</span><span class="x" data-close>×</span></div>
-    <div class="field"><label>选择用户</label><div class="picker">${chips}</div></div>
+    <div class="field"><label>选择用户</label>
+      <div class="uselect">
+        <select id="saleUser">${opts}</select>
+      </div>
+      <div class="uinfo" id="saleUserInfo"></div>
+    </div>
     <div class="field"><label>销售额（${esc(cur())}）</label><input type="number" inputmode="decimal" id="amt" value="${amt}" min="0" step="0.01" placeholder="实际收款金额"></div>
     <div class="field"><label>时间（${esc(state.date)}，精确到分钟，可改）</label><input type="time" id="saleTime" value="${esc(tm)}"></div>
     <div class="preview">
@@ -1322,17 +1349,31 @@ function showSaleSheet(){
     <button class="btn" id="saveSale">保存</button>
   `;
   $('#mask').classList.add('show');
-  document.querySelectorAll('[data-uid]').forEach(c=>c.onclick=()=>{state.saleUser=c.dataset.uid;state._amt=$('#amt').value;state._time=$('#saleTime').value;showSaleSheet();});
   document.querySelector('[data-close]').onclick=closeSheet;
+  // 用户信息小字（成本 / 售价 / 利润率）
+  const info=()=>{
+    const u=DB.users().find(x=>x.id===state.saleUser)||users[0];
+    const m=(+u.price>0)?((+u.price-+u.cost)/+u.price):0;
+    $('#saleUserInfo').innerHTML=`成本 <b>${money(u.cost)}</b> · 售价 <b>${money(u.price)}</b> · 利润率 <b>${(m*100).toFixed(1)}%</b>`;
+  };
   const upd=()=>{
     state._amt=$('#amt').value;
     const u=DB.users().find(x=>x.id===state.saleUser);
     const r=saleCalc(u,state._amt);
     const vs=$('#sheet').querySelectorAll('.preview .pr .v');
+    vs[0].textContent=money(u?u.cost:0);
+    vs[1].textContent=money(u?u.price:0);
     vs[2].textContent=(r.margin*100).toFixed(1)+'%';
     vs[3].textContent=money(r.amount);
     vs[4].textContent=money(r.profit);
   };
+  const sel=$('#saleUser');
+  sel.onchange=()=>{
+    state.saleUser=sel.value;
+    state._amt=$('#amt').value; state._time=$('#saleTime').value;
+    info(); upd();
+  };
+  info(); upd();
   $('#amt').oninput=upd;
   $('#saveSale').onclick=()=>{
     const u=DB.users().find(x=>x.id===state.saleUser);
@@ -1398,6 +1439,16 @@ $('#mask').onclick=e=>{if(e.target.id==='mask')closeSheet();};
 })();
 function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1600);}
 
+// 触发浏览器下载（独立封装，避免个别环境下 a.click() 行为异常）
+function downloadFile(text,filename,mime){
+  const blob=new Blob([text],{type:mime||'text/plain;charset=utf-8'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download=filename; a.rel='noopener'; a.style.display='none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{ document.body.removeChild(a); URL.revokeObjectURL(url); },0);
+}
 // 把字段安全写入 CSV：含逗号/引号/换行时加引号并转义
 function csvCell(v){ v=(v??'').toString(); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
 // 解析整份 CSV：支持引号字段、转义双引号、以及引号内跨行的备注
@@ -1436,9 +1487,81 @@ function exportCSV(){
     csv+='归档KEY,用户名,起始日期,截止日期,笔数,销售额,利润,归档时间,类型\n';
     archives.forEach(a=>{csv+=[a.id,csvCell(a.userName),csvCell(a.dateFrom),csvCell(a.dateTo),a.count,a.amount,a.profit,csvCell(fmtArchTime(a)),a.partial?'部分':'全部'].map(csvCell).join(',')+'\n';});
   }
-  const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
-  a.download='利润记账_'+todayStr()+'.csv';a.click();toast('已导出 '+users.length+' 用户 / '+sales.length+' 条记录');
+  downloadFile('\ufeff'+csv,'利润记账_'+todayStr()+'.csv','text/csv;charset=utf-8');
+  toast('已导出 '+users.length+' 用户 / '+sales.length+' 条记录');
+}
+// ====== 导出为 JSON：默认在页面内展示（可复制），也可下载文件 ======
+function exportJSON(){
+  const payload={
+    app:'利润记账', version:1, exportedAt:nowStamp(),
+    users:DB.users(), sales:DB.sales(), archives:DB.archives(),
+    tombs:JSON.parse(lsGet('pf_tombs')||'{}')
+  };
+  const txt=JSON.stringify(payload,null,2);
+  const fname='利润记账_'+todayStr()+'.json';
+  const usable=Math.round(txt.length/1024)+' KB';
+  $('#sheet').innerHTML=`
+    <div class="sheet-h"><span class="t">导出数据</span><span class="x" data-close>×</span></div>
+    <div class="muted" style="font-size:13px;padding:0 2px 10px;line-height:1.55">
+      共 ${payload.users.length} 个用户 · ${payload.sales.length} 条销售 · ${payload.archives.length} 份归档（约 ${usable}）。
+      可直接复制下面的内容保存，或点「下载文件」。
+    </div>
+    <div class="field"><label>数据内容（可长按全选复制）</label>
+      <textarea id="jsonOut" rows="10" readonly style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;-webkit-user-select:text;user-select:text">${esc(txt)}</textarea>
+    </div>
+    <button class="btn" id="jsonCopy">复制全部</button>
+    <button class="btn ghost" id="jsonSave" style="margin-top:10px">下载文件（.json）</button>
+  `;
+  $('#mask').classList.add('show');
+  document.querySelector('[data-close]').onclick=closeSheet;
+  $('#jsonCopy').onclick=async()=>{
+    const ta=$('#jsonOut'); ta.focus(); ta.select();
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(txt); }
+      else{ document.execCommand('copy'); }
+      toast('已复制到剪贴板');
+    }catch(e){
+      try{ document.execCommand('copy'); toast('已复制到剪贴板'); }
+      catch(e2){ toast('复制失败，请长按文本框手动全选复制'); }
+    }
+  };
+  $('#jsonSave').onclick=()=>{ downloadFile(txt,fname,'application/json;charset=utf-8'); toast('已保存 '+fname); };
+}
+function importJSONText(text){
+  let data;
+  try{ data=JSON.parse(text); }catch(e){ toast('JSON 解析失败：文件格式不正确'); return false; }
+  if(!data||typeof data!=='object'||(!data.users&&!data.sales)){ toast('不是有效的备份文件'); return false; }
+  const users=DB.users().slice(), sales=DB.sales().slice(), archives=DB.archives().slice();
+  let uAdd=0,uUpd=0,sAdd=0;
+  (data.users||[]).forEach(u=>{
+    if(!u||!u.name) return;
+    const ex=users.find(x=>x.name===u.name);
+    if(ex){ ex.cost=+u.cost||0; ex.price=+u.price||0; ex.note=u.note||''; uUpd++; }
+    else{ users.push({id:u.id||uid(),name:u.name,cost:+u.cost||0,price:+u.price||0,note:u.note||''}); uAdd++; }
+  });
+  (data.sales||[]).forEach(s=>{
+    if(!s||!s.date) return;
+    const dup=sales.some(x=>x.date===s.date&&x.userName===s.userName&&+x.amount===+s.amount&&+x.profit===+s.profit);
+    if(dup) return;
+    let u=users.find(x=>x.name===s.userName);
+    if(!u){ u={id:uid(),name:s.userName||'未命名',cost:+s.cost||0,price:+s.price||0,note:''}; users.push(u); }
+    sales.push({id:s.id||uid(),userId:u.id,userName:s.userName,cost:+s.cost||0,price:+s.price||0,
+      qty:+s.qty||0,amount:+s.amount||0,profit:+s.profit||0,date:s.date,time:s.time||'',
+      settled:s.settled||'',createdAt:s.createdAt||Date.now()});
+    sAdd++;
+  });
+  (data.archives||[]).forEach(a=>{ if(a&&a.id&&!archives.some(x=>x.id===a.id)) archives.push(a); });
+  DB.setUsers(users); DB.setSales(sales); DB.setArchives(archives); render();
+  toast('已导入：用户 +'+uAdd+'/更新'+uUpd+'，销售 +'+sAdd+' 条');
+  return true;
+}
+function importJSON(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{ importJSONText(r.result); };
+    r.readAsText(f);
+  };
+  inp.click();
 }
 function importCSV(){
   const inp=document.createElement('input');inp.type='file';inp.accept='.csv';
