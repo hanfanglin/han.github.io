@@ -95,11 +95,14 @@
   .iconbtn:active{transform:scale(.92);background:var(--card3);border-color:var(--accent);}
 
   /* Content */
+  /* 底部留白 = 标签栏实高（约 62px）+ 14px 呼吸，而不是凭感觉写 90px */
   .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
-    padding:14px 16px calc(90px + env(safe-area-inset-bottom));
+    padding:14px 16px calc(76px + env(safe-area-inset-bottom));
     display:flex;flex-direction:column;min-height:0;}
-  /* 空状态撑满剩余空间：内容少时也不会在下方留一片空白 */
-  .content > .empty{flex:1;justify-content:center;min-height:0;}
+  /* 空状态撑满剩余空间：内容少时也不会在下方留一片空白。
+     注意：视图返回多个兄弟节点（卡片 + 标题 + 空状态），.empty 并非第一个子元素，
+     用 :last-child 才能命中「页面最后就是空状态」这一情形。 */
+  .content > .empty:last-child{flex:1;justify-content:center;min-height:0;padding-bottom:0;}
   /* 分组标题：中文标题不适用 uppercase，用字重 + 左侧色条 + 略宽字距建立层级 */
   .section-title{font-size:12px;color:var(--txt2);font-weight:700;margin:20px 6px 9px;letter-spacing:.2px;
     position:relative;padding-left:10px;}
