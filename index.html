@@ -69,11 +69,19 @@
     }
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;height:100%;background:var(--bg);}
-  body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",Helvetica,Arial,sans-serif;
-    background:var(--bg);color:var(--txt);-webkit-font-smoothing:antialiased;overflow:hidden;
+  /* 注意：不要给 html 加 overflow:hidden。
+     iOS 上祖先链出现 overflow:hidden 会阻断子级 overflow:auto 容器的触摸滚动，
+     表现为「页面滑不动」。这里让 html 保持默认（可滚动但内容不超出，故不会真的滚），
+     只约束 body；整页不滚动由 .app{height:100dvh;overflow:hidden} 自己保证。 */
+  html{margin:0;padding:0;height:100%;background:var(--bg);}
+  body{margin:0;padding:0;height:100%;background:var(--bg);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue",Helvetica,Arial,sans-serif;
+    color:var(--txt);-webkit-font-smoothing:antialiased;
     overscroll-behavior:none;}
-  .app{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg);}
+  /* .app 自身裁剪溢出（标签栏补底层只在 .app 内延伸，不需要撑大文档），
+     这样 html/body 都不必加 overflow:hidden，iOS 触摸滚动不受影响。 */
+  .app{display:flex;flex-direction:column;height:100vh;height:100dvh;background:var(--bg);
+    overflow:hidden;}
   /* Fintech 数字排版：所有金额用等宽字形，位数对齐、不跳动 */
   .val,.big,.small,#pvA,#pvP,#pvLA,#pvLP,.amt,.pr .v,.lock-title{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
 
@@ -95,11 +103,16 @@
   .iconbtn:active{transform:scale(.92);background:var(--card3);border-color:var(--accent);}
 
   /* Content */
-  /* 底部留白 = 标签栏实高（约 62px）+ 14px 呼吸。
-     与 .tabbar 用同一套兜底逻辑：不依赖 env()（部分环境返回 0），
-     直接按最大家用机型安全区（34px）预留，保证内容不会被标签栏压住。 */
-  .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
-    padding:14px 16px calc(76px + env(safe-area-inset-bottom));
+  /* 标签栏已改为 .app 的文档流子元素排在最后，正常情况下不再覆盖内容区，
+     这里只需要少量呼吸留白（不再按标签栏高度预留 76px）。
+     保留 24px 底部内边距：滚动到底时最后一项不贴边，视觉更稳。 */
+  /* iOS 注意：.content 同时是「flex 子项」和「滚动容器」时，
+     必须显式声明 min-height:0 + touch-action，否则 WebView 有时不派发触摸滚动。
+     另外 .app 上加 overflow:hidden 防止补底层外溢，滚动交给 .content 自己。 */
+  .content{flex:1 1 auto;overflow-y:auto;overflow-x:hidden;
+    -webkit-overflow-scrolling:touch;touch-action:pan-y;
+    overscroll-behavior-y:contain;
+    padding:14px 16px 24px;
     display:flex;flex-direction:column;min-height:0;}
   /* 空状态撑满剩余空间：内容少时也不会在下方留一片空白。
      注意：视图返回多个兄弟节点（卡片 + 标题 + 空状态），.empty 并非第一个子元素，
@@ -205,12 +218,19 @@
      env(safe-area-inset-bottom) 解析为 0，此时标签栏背景盒高度不足，
      会露出约 59pt 的页面底色空白。因此这里不再依赖 env() 的返回值：
      背景盒直接向下多垫 60px（>最大家用机型安全区 34pt），永远盖到屏幕物理底。 */
-  .tabbar{position:fixed;left:0;right:0;bottom:0;
+  /* 标签栏：改为 .app 的文档流子元素（它是 .app 的最后一个子节点），不再用 position:fixed。
+     iOS standalone PWA（主屏图标打开、无浏览器 UI）下，fixed 元素的 containing block
+     并不保证等于屏幕物理底部，会悬空一段、下方露出 --bg 页面底色。
+     文档流 + .app(height:100dvh) 可保证标签栏一定落在布局最底部；
+     flex:none 防止它被内容挤压缩水。
+     底部安全区：padding-bottom 用 max(env(...), 34px) 兜底——
+     环境不支持 env() 时也保留 34px（最大机型安全区），背景色由标签栏自身
+     背景盒铺满，不需要伪元素向外溢出，因此 .app 可安全 overflow:hidden，
+     html 也不必加 overflow:hidden，iOS 触摸滚动不受影响。 */
+  .tabbar{position:relative;flex:none;
     border-top:.5px solid var(--sep);display:flex;align-items:stretch;
-    padding:7px 6px calc(7px + env(safe-area-inset-bottom));z-index:25;
+    padding:7px 6px calc(7px + max(env(safe-area-inset-bottom), 34px));z-index:25;
     background:var(--surface);}
-  .tabbar::after{content:'';position:absolute;left:0;right:0;top:100%;height:60px;
-    background:var(--surface);pointer-events:none;}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
     padding:2px 0 1px;color:var(--txt3);font-size:10.5px;font-weight:500;cursor:pointer;
     border:none;background:none;font-family:inherit;-webkit-tap-highlight-color:transparent;
@@ -268,7 +288,9 @@
     text-align:center;font-size:11.5px;color:var(--txt3);letter-spacing:.3px;
     font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;
     padding:0 16px;pointer-events:none;user-select:none;}
-  .lock-ver b{color:var(--txt2);font-weight:700;}
+  .lock-ver span{display:inline-block;padding:4px 11px;border-radius:9px;
+    background:var(--card2);border:.5px solid var(--sep2);}
+  .lock-ver b{color:var(--accent);font-weight:700;}
   .field{margin-bottom:16px;}
   .field label{display:block;font-size:12.5px;color:var(--txt3);margin-bottom:7px;font-weight:600;letter-spacing:.2px;}
   .field input,.field select{width:100%;background:var(--card2);border:.5px solid var(--sep2);border-radius:12px;
@@ -464,8 +486,8 @@
 /* ====== 版本号：改一次代码就 +1，用于确认手机上运行的是不是最新版本 ======
    离线时 Service Worker 会回退缓存，可能打开旧文件；开屏底部会显示版本号，
    与这里不一致就说明是缓存的旧版（下拉刷新或清一次 Safari 缓存即可）。 */
-const APP_VER='v1.2.0';
-const APP_BUILD='2026-09-11 18:10';   // 本次：修复设置页/报表页分组被压扁、标签栏贴底
+const APP_VER='v1.4.0';
+const APP_BUILD='2026-09-11 18:33';   // 本次：修复 iOS 上页面滑不动（去掉 html 的 overflow:hidden）；统计卡片与列表恢复正常
 /* ====== 存储（localStorage 不可用时自动降级到内存，避免 file:// 白屏） ====== */
 const MEM_STORE={pf_users:'[]',pf_sales:'[]',pf_set:'{}',pf_archives:'[]'};
 let storageOK=false;
@@ -1840,7 +1862,7 @@ function renderLock(isSetup){
   if(!lock) return;
   err.textContent='';
   const ver=$('#lockVer');
-  if(ver) ver.innerHTML='<b>'+APP_VER+'</b> · '+APP_BUILD;
+  if(ver) ver.innerHTML='<span><b>'+APP_VER+'</b> · '+APP_BUILD+'</span>';
   if(isSetup){
     sub.textContent='首次使用，请设置登录账号和密码';
     form.innerHTML=`
