@@ -95,9 +95,10 @@
   .iconbtn:active{transform:scale(.92);background:var(--card3);border-color:var(--accent);}
 
   /* Content */
-  /* 底部留白 = 标签栏实高（约 62px）+ 14px 呼吸，而不是凭感觉写 90px */
+  /* 底部留白 = 标签栏实高（约 62px）+ 14px 呼吸 + 安全区。
+     安全区同样用 max() 兜底，与 .tabbar 的 padding 保持一致，避免两者算出不同高度。 */
   .content{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
-    padding:14px 16px calc(76px + env(safe-area-inset-bottom));
+    padding:14px 16px calc(76px + max(env(safe-area-inset-bottom), 16px));
     display:flex;flex-direction:column;min-height:0;}
   /* 空状态撑满剩余空间：内容少时也不会在下方留一片空白。
      注意：视图返回多个兄弟节点（卡片 + 标题 + 空状态），.empty 并非第一个子元素，
@@ -182,7 +183,7 @@
   @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
   /* FAB：实心电光蓝 + 光晕，深色下的视觉焦点 */
-  .fab{position:fixed;right:18px;bottom:calc(92px + env(safe-area-inset-bottom));
+  .fab{position:fixed;right:18px;bottom:calc(92px + max(env(safe-area-inset-bottom), 16px));
     width:54px;height:54px;border-radius:16px;border:none;color:#08111C;
     background:var(--accent);
     font-size:29px;font-weight:400;line-height:1;box-shadow:0 6px 24px rgba(77,166,255,.42);
@@ -190,11 +191,18 @@
     padding-bottom:2px;transition:transform .16s,box-shadow .2s;}
   .fab:active{transform:scale(.9);box-shadow:0 4px 14px rgba(77,166,255,.32);}
 
-  /* Tab bar：实色表面 + 顶部描边；选中态用色块而非渐变 */
+  /* Tab bar：实色表面 + 顶部描边；选中态用色块而非渐变。
+     底部安全区（iPhone 全面屏 home indicator）必须由标签栏自身背景覆盖，
+     否则会露出一条与页面同色的空白。这里用 max() 兜底：
+     env() 在部分环境（旧 WebView / 非全面屏 / 模拟器）会解析为 0，
+     此时仍保留 16px 延伸，保证背景一定盖到屏幕最底。 */
   .tabbar{position:fixed;left:0;right:0;bottom:0;
     border-top:.5px solid var(--sep);display:flex;align-items:stretch;
-    padding:7px 6px calc(7px + env(safe-area-inset-bottom));z-index:25;
+    padding:7px 6px calc(7px + max(env(safe-area-inset-bottom), 16px));z-index:25;
     background:var(--surface);}
+  .tabbar::after{content:'';position:absolute;left:0;right:0;top:100%;
+    height:max(env(safe-area-inset-bottom), 16px);
+    background:var(--surface);pointer-events:none;}
   .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
     padding:2px 0 1px;color:var(--txt3);font-size:10.5px;font-weight:500;cursor:pointer;
     border:none;background:none;font-family:inherit;-webkit-tap-highlight-color:transparent;
