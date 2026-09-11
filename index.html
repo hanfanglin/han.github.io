@@ -263,6 +263,12 @@
   .lock .btn{width:100%;max-width:360px;margin-top:4px;}
   .lock-err{color:var(--red);font-size:13.5px;min-height:18px;margin-top:8px;text-align:center;width:100%;max-width:360px;}
   .lock .muted{margin-top:26px;font-size:12.5px;text-align:center;max-width:320px;line-height:1.6;}
+  /* 开屏版本号：固定在屏幕最底部，一眼确认运行的是不是最新代码 */
+  .lock-ver{position:absolute;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom));
+    text-align:center;font-size:11.5px;color:var(--txt3);letter-spacing:.3px;
+    font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;
+    padding:0 16px;pointer-events:none;user-select:none;}
+  .lock-ver b{color:var(--txt2);font-weight:700;}
   .field{margin-bottom:16px;}
   .field label{display:block;font-size:12.5px;color:var(--txt3);margin-bottom:7px;font-weight:600;letter-spacing:.2px;}
   .field input,.field select{width:100%;background:var(--card2);border:.5px solid var(--sep2);border-radius:12px;
@@ -423,6 +429,7 @@
   <div id="lockForm" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
   <div class="lock-err" id="lockErr"></div>
   <div class="muted">本地存储 · 仅本机可用。数据只保存在你这台设备上，建议用 Safari「添加到主屏幕」后使用。</div>
+  <div class="lock-ver" id="lockVer"></div>
 </div>
 <div id="memWarn" style="display:none;position:fixed;left:0;right:0;top:0;z-index:60;background:#ff9500;color:#fff;font-size:12.5px;line-height:1.4;padding:calc(env(safe-area-inset-top) + 8px) 16px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.2)" data-page-node-id="xL7jq62BVEOWntnTkkuTeH">⚠️ 当前为临时预览模式，刷新后数据会丢失。请用 Safari 打开网址并「添加到主屏幕」以永久保存在本机。</div>
 
@@ -454,6 +461,11 @@
 </div>
 
 <script>
+/* ====== 版本号：改一次代码就 +1，用于确认手机上运行的是不是最新版本 ======
+   离线时 Service Worker 会回退缓存，可能打开旧文件；开屏底部会显示版本号，
+   与这里不一致就说明是缓存的旧版（下拉刷新或清一次 Safari 缓存即可）。 */
+const APP_VER='v1.2.0';
+const APP_BUILD='2026-09-11 18:10';   // 本次：修复设置页/报表页分组被压扁、标签栏贴底
 /* ====== 存储（localStorage 不可用时自动降级到内存，避免 file:// 白屏） ====== */
 const MEM_STORE={pf_users:'[]',pf_sales:'[]',pf_set:'{}',pf_archives:'[]'};
 let storageOK=false;
@@ -1308,7 +1320,10 @@ function viewSettings(){
     <div class="row" id="offRow"><div class="main"><div class="name">离线可用</div><div class="sub">检查中…</div></div><div class="amt">…</div></div>
   </div>
   <div class="section-title">关于</div>
-  <div class="list"><div class="row"><div class="main"><div class="name">利润记账</div><div class="sub">本地存储 · 可选云同步（数据只发往你自己的服务器）</div></div></div></div>
+  <div class="list">
+    <div class="row"><div class="main"><div class="name">利润记账</div><div class="sub">本地存储 · 可选云同步（数据只发往你自己的服务器）</div></div></div>
+    <div class="row"><div class="main"><div class="name">版本</div><div class="sub">${APP_VER} · 构建于 ${APP_BUILD}</div></div></div>
+  </div>
   <div style="text-align:center;color:var(--txt2);font-size:12px;margin-top:18px">在 iPhone Safari 中「添加到主屏幕」即可像 App 一样使用</div>
   `;
 }
@@ -1824,6 +1839,8 @@ function renderLock(isSetup){
   const lock=$('#lock'), form=$('#lockForm'), sub=$('#lockSub'), err=$('#lockErr');
   if(!lock) return;
   err.textContent='';
+  const ver=$('#lockVer');
+  if(ver) ver.innerHTML='<b>'+APP_VER+'</b> · '+APP_BUILD;
   if(isSetup){
     sub.textContent='首次使用，请设置登录账号和密码';
     form.innerHTML=`
