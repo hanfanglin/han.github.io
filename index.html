@@ -1487,8 +1487,34 @@ function exportCSV(){
     csv+='归档KEY,用户名,起始日期,截止日期,笔数,销售额,利润,归档时间,类型\n';
     archives.forEach(a=>{csv+=[a.id,csvCell(a.userName),csvCell(a.dateFrom),csvCell(a.dateTo),a.count,a.amount,a.profit,csvCell(fmtArchTime(a)),a.partial?'部分':'全部'].map(csvCell).join(',')+'\n';});
   }
-  downloadFile('\ufeff'+csv,'利润记账_'+todayStr()+'.csv','text/csv;charset=utf-8');
-  toast('已导出 '+users.length+' 用户 / '+sales.length+' 条记录');
+  const fname='利润记账_'+todayStr()+'.csv';
+  const size=Math.round(new Blob(['\ufeff'+csv]).size/1024*10)/10;
+  $('#sheet').innerHTML=`
+    <div class="sheet-h"><span class="t">导出 CSV</span><span class="x" data-close>×</span></div>
+    <div class="muted" style="font-size:13px;padding:0 2px 10px;line-height:1.55">
+      共 ${users.length} 个用户 · ${sales.length} 条销售 · ${archives.length} 份归档（约 ${size} KB）。
+      可直接长按复制下面的内容，或点「下载文件」保存为 .csv。
+    </div>
+    <div class="field"><label>数据内容（可长按全选复制）</label>
+      <textarea id="csvOut" rows="10" readonly style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.5;-webkit-user-select:text;user-select:text">${esc(csv)}</textarea>
+    </div>
+    <button class="btn" id="csvCopy">复制全部</button>
+    <button class="btn ghost" id="csvSave" style="margin-top:10px">下载文件（.csv）</button>
+  `;
+  $('#mask').classList.add('show');
+  document.querySelector('[data-close]').onclick=closeSheet;
+  $('#csvCopy').onclick=async()=>{
+    const ta=$('#csvOut'); ta.focus(); ta.select();
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(csv); }
+      else{ document.execCommand('copy'); }
+      toast('已复制到剪贴板');
+    }catch(e){
+      try{ document.execCommand('copy'); toast('已复制到剪贴板'); }
+      catch(e2){ toast('复制失败，请长按文本框手动全选复制'); }
+    }
+  };
+  $('#csvSave').onclick=()=>{ downloadFile('\ufeff'+csv,fname,'text/csv;charset=utf-8'); toast('已保存 '+fname); };
 }
 // ====== 导出为 JSON：默认在页面内展示（可复制），也可下载文件 ======
 function exportJSON(){
