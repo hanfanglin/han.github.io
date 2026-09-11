@@ -148,6 +148,7 @@
     padding:14px 18px calc(20px + env(safe-area-inset-bottom));
     animation:rise .28s cubic-bezier(.2,.8,.2,1);max-height:92vh;min-height:60vh;overflow-y:auto;
     box-shadow:0 -6px 26px rgba(0,0,0,.14);}
+  .sheet.lock-x{overflow-x:hidden;touch-action:pan-y;}
   .sheet::before{content:'';position:absolute;top:7px;left:50%;transform:translateX(-50%);
     width:40px;height:5px;border-radius:3px;background:var(--sep);}
   @keyframes rise{from{transform:translateY(100%)}to{transform:translateY(0)}}
@@ -157,6 +158,22 @@
     border-radius:50%;background:var(--card2);color:var(--txt2);cursor:pointer;line-height:1;
     font-size:20px;font-weight:600;user-select:none;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
   .sheet-h .x:active{background:var(--sep);transform:scale(.92);}
+  /* 登录锁屏 */
+  .lock{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:28px 26px calc(28px + env(safe-area-inset-bottom));background:var(--bg);overflow-y:auto;}
+  .lock.hidden{display:none;}
+  .lock-logo{width:72px;height:72px;border-radius:22px;display:flex;align-items:center;justify-content:center;
+    margin-bottom:16px;background:linear-gradient(135deg,#0a84ff,#5e5ce6);box-shadow:0 8px 22px rgba(10,132,255,.32);}
+  .lock-logo svg{width:40px;height:40px;}
+  .lock-title{font-size:24px;font-weight:800;margin-bottom:4px;}
+  .lock-sub{font-size:14px;color:var(--txt2);margin-bottom:26px;text-align:center;}
+  .lock .field{width:100%;max-width:360px;margin-bottom:14px;}
+  .lock .field input{width:100%;background:var(--card);border:1px solid var(--sep);border-radius:14px;
+    padding:15px;font-size:16px;color:var(--txt);outline:none;font-family:inherit;-webkit-text-security:none;}
+  .lock .field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,122,255,.15);}
+  .lock .btn{width:100%;max-width:360px;margin-top:4px;}
+  .lock-err{color:var(--red);font-size:13.5px;min-height:18px;margin-top:8px;text-align:center;width:100%;max-width:360px;}
+  .lock .muted{margin-top:26px;font-size:12.5px;text-align:center;max-width:320px;line-height:1.6;}
   .field{margin-bottom:16px;}
   .field label{display:block;font-size:13px;color:var(--txt2);margin-bottom:7px;font-weight:600;}
   .field input,.field select{width:100%;background:var(--card2);border:1px solid transparent;border-radius:14px;
@@ -295,6 +312,15 @@
 
 <div class="mask" id="mask" data-page-node-id="KHjLRM7RmEm7D0DztXQvCQ"><div class="sheet" id="sheet" data-page-node-id="BN5nDu7UfBaohmDmH4Vi20"></div></div>
 <div class="toast" id="toast" data-page-node-id="42lfUSICD4EsXc1mv30wRy"></div>
+
+<div class="lock hidden" id="lock">
+  <div class="lock-logo"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 11h7M12 8.5V11M9.5 14.5h5M9.5 17h5"/></svg></div>
+  <div class="lock-title">利润记账</div>
+  <div class="lock-sub" id="lockSub"></div>
+  <div id="lockForm" style="width:100%;display:flex;flex-direction:column;align-items:center"></div>
+  <div class="lock-err" id="lockErr"></div>
+  <div class="muted">本地存储 · 仅本机可用。数据只保存在你这台设备上，建议用 Safari「添加到主屏幕」后使用。</div>
+</div>
 <div id="memWarn" style="display:none;position:fixed;left:0;right:0;top:0;z-index:60;background:#ff9500;color:#fff;font-size:12.5px;line-height:1.4;padding:calc(env(safe-area-inset-top) + 8px) 16px 8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.2)" data-page-node-id="xL7jq62BVEOWntnTkkuTeH">⚠️ 当前为临时预览模式，刷新后数据会丢失。请用 Safari 打开网址并「添加到主屏幕」以永久保存在本机。</div>
 
 <div id="iosHint" data-page-node-id="jemZSrERsDcRqt8ImRJnrC">
@@ -343,6 +369,36 @@ const DB = {
     s[k]=d;lsSet('pf_set',JSON.stringify(s));return d;},  // 写：传了就写入
 };
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+
+/* ====== 登录鉴权（纯前端本地锁：数据仍存本机 localStorage） ======
+ * 说明：这是「本地门禁」，不是加密存储。密码用 SHA-256（file:// 下降级为 cyrb53）加盐哈希，
+ * 不会以明文存储；但本机 localStorage 里的业务数据本身未加密，有设备权限的人仍可读取。
+ * 如需「数据也加密」，后续可基于密码派生密钥做一层加密，这里先满足登录门槛需求。 */
+const AUTH_KEY='pf_auth';
+function cyrb53Hash(str, seed=0x9E3779B9){
+  let h1=0xDEADBEEF^seed, h2=0x41C6CE57^seed;
+  for(let i=0;i<str.length;i++){ const ch=str.charCodeAt(i);
+    h1=Math.imul(h1^ch,2654435761); h2=Math.imul(h2^ch,1597334677); }
+  h1=Math.imul(h1^(h1>>>16),2246822507); h2=Math.imul(h2^(h2>>>13),3266489909);
+  h1^=h1>>>13; h2^=h2>>>16;
+  return (h1>>>0).toString(16).padStart(8,'0')+(h2>>>0).toString(16).padStart(8,'0');
+}
+async function sha256Hex(str){
+  try{ if(typeof crypto!=='undefined' && crypto.subtle){ const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join(''); } }catch(e){}
+  return cyrb53Hash(str);
+}
+function getCreds(){ try{ const c=JSON.parse(lsGet(AUTH_KEY)||'null'); return c&&c.user?c:null; }catch(e){ return null; } }
+async function saveCreds(user,pass){
+  const salt=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  const hash=await sha256Hex(pass+'|'+salt);
+  lsSet(AUTH_KEY, JSON.stringify({user, salt, hash}));
+}
+async function verifyCreds(user,pass){
+  const c=getCreds(); if(!c) return false;
+  if(c.user!==user) return false;
+  return (await sha256Hex(pass+'|'+c.salt))===c.hash;
+}
 
 /* ====== 云同步：跨设备自动同步（自建服务端） ======
  * 原理：所有增删改都经过 DB.setUsers/setSales/setArchives，
@@ -976,6 +1032,7 @@ function showSettleSheet(){
       :'全部结算：把截止日期前所有未结金额一次性结清，每个用户各生成一份归档，记录会打上「已结算」标记，可随时查看明细或解除归档。'}</div>
     <button class="btn" id="doSettle" ${keys.length?'':'disabled style="opacity:.5"'}>${isP?'确认部分结算':'确认结算 '+keys.length+' 个用户'}</button>
   `;
+  $('#sheet').classList.add('lock-x');
   $('#mask').classList.add('show');
   document.querySelector('[data-close]').onclick=closeSheet;
   $('#stEnd').onchange=e=>{state._end=e.target.value;state._parts={};showSettleSheet();};
@@ -1112,6 +1169,10 @@ function viewSettings(){
     <div class="row" id="setCur"><div class="main"><div class="name">货币符号</div><div class="sub">当前：${esc(cur)}</div></div><div class="amt chev">›</div></div>
     <div class="row" id="setTheme"><div class="main"><div class="name">外观</div><div class="sub">${th==='light'?'浅色':th==='dark'?'深色':'跟随系统'}</div></div><div class="amt chev">›</div></div>
   </div>
+  <div class="section-title">账户</div>
+  <div class="list">
+    <div class="row" id="chgPwd"><div class="main"><div class="name">修改密码</div><div class="sub">登录账号 · ${esc((getCreds()||{}).user||'')}</div></div><div class="amt chev">›</div></div>
+  </div>
   <div class="section-title">云同步</div>
   <div class="list">
     <div class="row" id="syncCfg"><div class="main"><div class="name">同步服务器</div><div class="sub">${(DB.setting('syncUrl')&&DB.setting('syncToken'))?('已配置 · '+esc((DB.setting('syncUrl')||'').replace(/^https?:\/\//,'').split('/')[0])):'未配置（多设备同步用）'}</div></div><div class="amt chev">›</div></div>
@@ -1149,7 +1210,7 @@ function bindContent(){
   document.querySelectorAll('[data-pie]').forEach(g=>g.onclick=()=>selectPie(+g.dataset.pie));
   document.querySelectorAll('[data-lg]').forEach(el=>el.onclick=()=>selectPie(+el.dataset.lg));
   // 设置
-  const setCur=$('#setCur'), setTheme=$('#setTheme'), exp=$('#exp'), imp=$('#imp'), clear=$('#clear');
+  const setCur=$('#setCur'), setTheme=$('#setTheme'), exp=$('#exp'), imp=$('#imp'), clear=$('#clear'), chgPwd=$('#chgPwd');
   if(setCur) setCur.onclick=()=>{const v=prompt('货币符号',DB.setting('cur')||'¥');if(v!==null){DB.setting('cur',v.trim()||'¥');render();}};
   if(setTheme) setTheme.onclick=()=>{
     const cur=DB.setting('theme')||'auto';
@@ -1158,6 +1219,7 @@ function bindContent(){
   };
   if(exp) exp.onclick=exportCSV;
   if(imp) imp.onclick=importCSV;
+  if(chgPwd) chgPwd.onclick=openChangePwd;
   // 云同步
   const syncCfg=$('#syncCfg'), syncGo=$('#syncGo');
   if(syncCfg) syncCfg.onclick=()=>{
@@ -1177,6 +1239,29 @@ function bindContent(){
     if(confirm('确定清空所有用户和记录？此操作不可恢复。')){
       if(confirm('再次确认：真的要删除全部数据吗？')){DB.setUsers([]);DB.setSales([]);DB.setArchives([]);render();toast('已清空');}
     }
+  };
+}
+
+/* ====== 修改密码弹窗 ====== */
+function openChangePwd(){
+  const c=getCreds(); if(!c){ toast('未设置密码'); return; }
+  $('#sheet').innerHTML=`
+    <div class="sheet-h"><span class="t">修改密码</span><span class="x" data-close>×</span></div>
+    <div class="field"><label>当前密码</label><input type="password" id="cpOld" placeholder="请输入当前密码"></div>
+    <div class="field"><label>新密码（至少 4 位）</label><input type="password" id="cpNew" placeholder="请输入新密码"></div>
+    <div class="field"><label>确认新密码</label><input type="password" id="cpNew2" placeholder="请再次输入新密码"></div>
+    <div class="lock-err" id="cpErr" style="margin:0 2px 12px"></div>
+    <button class="btn" id="cpSave">保存</button>`;
+  $('#mask').classList.add('show');
+  document.querySelector('[data-close]').onclick=closeSheet;
+  $('#cpSave').onclick=async ()=>{
+    const err=$('#cpErr'); err.textContent='';
+    const oldV=$('#cpOld').value, newV=$('#cpNew').value, newV2=$('#cpNew2').value;
+    if(!(await verifyCreds(c.user,oldV))){ err.textContent='当前密码不正确'; return; }
+    if(newV.length<4){ err.textContent='新密码至少 4 位'; return; }
+    if(newV!==newV2){ err.textContent='两次新密码不一致'; return; }
+    await saveCreds(c.user,newV);
+    closeSheet(); toast('密码已修改');
   };
 }
 
@@ -1269,7 +1354,7 @@ function openUserModal(edit){
 }
 
 /* ====== 工具 ====== */
-function closeSheet(){$('#mask').classList.remove('show');$('#sheet').style.transform='';}
+function closeSheet(){$('#mask').classList.remove('show');$('#sheet').style.transform='';$('#sheet').classList.remove('lock-x');}
 $('#mask').onclick=e=>{if(e.target.id==='mask')closeSheet();};
 // 弹窗支持下拉关闭（手机上比点 × 更顺手）
 (function(){
@@ -1463,17 +1548,63 @@ if(inWeChat){
 }
 $('#fab').onclick=()=>{ if(state.tab==='users') openUserModal(); else if(state.tab==='settle') openSettleModal(); else openSaleModal(); };
 document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>goTab(b.dataset.tab));
-render();
 
-/* 云同步自动触发：启动后 1.5s 拉一次；从后台切回前台超过 60s 也拉一次 */
-if(syncEndpoint()){
-  setTimeout(()=>syncNow(false),1500);
-  document.addEventListener('visibilitychange',()=>{
-    if(document.visibilityState!=='visible') return;
-    const last=+DB.setting('lastSync')||0;
-    if(Date.now()-last>60000) syncNow(false);
-  });
+/* ====== 启动：先过登录锁，成功后再渲染主程序 ====== */
+function initApp(){
+  if(initApp._done) return; initApp._done=true;
+  render();
+  if(syncEndpoint()){
+    setTimeout(()=>syncNow(false),1500);
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState!=='visible') return;
+      const last=+DB.setting('lastSync')||0;
+      if(Date.now()-last>60000) syncNow(false);
+    });
+  }
 }
+function renderLock(isSetup){
+  const lock=$('#lock'), form=$('#lockForm'), sub=$('#lockSub'), err=$('#lockErr');
+  if(!lock) return;
+  err.textContent='';
+  if(isSetup){
+    sub.textContent='首次使用，请设置登录账号和密码';
+    form.innerHTML=`
+      <div class="field"><input id="lkUser" placeholder="用户名" autocomplete="username"></div>
+      <div class="field"><input id="lkPass" type="password" placeholder="密码（至少 4 位）" autocomplete="new-password"></div>
+      <div class="field"><input id="lkPass2" type="password" placeholder="确认密码" autocomplete="new-password"></div>
+      <button class="btn" id="lkGo">创建并进入</button>`;
+  }else{
+    const c=getCreds();
+    sub.textContent='请输入密码进入';
+    form.innerHTML=`
+      <div class="field"><input id="lkUser" placeholder="用户名" value="${esc(c.user)}" readonly style="background:var(--card2);color:var(--txt2)"></div>
+      <div class="field"><input id="lkPass" type="password" placeholder="密码" autocomplete="current-password"></div>
+      <button class="btn" id="lkGo">进入</button>`;
+  }
+  $('#lkGo').onclick=()=>onLockSubmit(isSetup);
+  $('#lkPass').addEventListener('keydown',e=>{ if(e.key==='Enter') onLockSubmit(isSetup); });
+  lock.classList.remove('hidden');
+}
+async function onLockSubmit(isSetup){
+  const err=$('#lockErr'); err.textContent='';
+  const user=$('#lkUser').value.trim();
+  const pass=$('#lkPass').value;
+  if(!user){ err.textContent='请输入用户名'; return; }
+  if(pass.length<4){ err.textContent='密码至少 4 位'; return; }
+  if(isSetup){
+    const pass2=$('#lkPass2').value;
+    if(pass!==pass2){ err.textContent='两次输入的密码不一致'; return; }
+    await saveCreds(user,pass);
+    unlockAndStart();
+  }else{
+    const ok=await verifyCreds(user,pass);
+    if(!ok){ err.textContent='用户名或密码错误'; $('#lkPass').value=''; return; }
+    unlockAndStart();
+  }
+}
+function unlockAndStart(){ const l=$('#lock'); if(l) l.classList.add('hidden'); initApp(); }
+function requireAuth(){ renderLock(!getCreds()); }
+requireAuth();
 
 /* Service Worker + 离线自检 */
 const SW_CACHE='profit-v10';
